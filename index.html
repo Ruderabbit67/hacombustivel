@@ -1,0 +1,615 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Há Combustível — Maputo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      color: #1a1a18;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .header {
+      background: #1a1a18;
+      color: #f5f5f0;
+      padding: 12px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-title { font-size: 15px; font-weight: 600; }
+    .header-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .header-refresh {
+      background: none;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .header-refresh:hover { border-color: #888; color: #f5f5f0; }
+    .banner-urgencia {
+      background: #c0392b;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      display: none;
+    }
+    .banner-urgencia.visivel { display: block; }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px 16px;
+      background: #eeeee9;
+      border-bottom: 1px solid #ddd;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .stat-num { font-size: 22px; font-weight: 600; }
+    .stat-label { font-size: 11px; color: #888; margin-top: 1px; }
+    .num-verde    { color: #2d7a3a; }
+    .num-amarelo  { color: #b07d00; }
+    .num-vermelho { color: #c0392b; }
+    .minha-zona-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      font-size: 12px;
+    }
+    .zona-label { white-space: nowrap; font-weight: 600; color: #1a1a18; }
+    .minha-zona-bar select {
+      flex: 1;
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f9f9f9;
+      color: #1a1a18;
+    }
+    .zona-clear { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; padding: 0 4px; }
+    .filtros {
+      display: flex;
+      gap: 5px;
+      padding: 8px 16px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      flex-wrap: wrap;
+    }
+    .fbtn {
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.15s;
+    }
+    .fbtn:hover { border-color: #aaa; }
+    .fbtn.on          { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+    .fbtn.on-verde    { background: #2d7a3a; color: #fff; border-color: #2d7a3a; }
+    .fbtn.on-amarelo  { background: #b07d00; color: #fff; border-color: #b07d00; }
+    .fbtn.on-verm     { background: #c0392b; color: #fff; border-color: #c0392b; }
+    .fbtn.on-gasolina { background: #185fa5; color: #fff; border-color: #185fa5; }
+    .fbtn.on-gasoleo  { background: #5a3e9e; color: #fff; border-color: #5a3e9e; }
+    .filtros-sep { width: 1px; background: #e8e8e4; margin: 2px; align-self: stretch; }
+    .lista { padding: 0 16px 16px; }
+    .bairro-bloco { margin-bottom: 4px; }
+    .bairro-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 5px;
+    }
+    .bairro-titulo {
+      font-size: 11px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .bairro-frescura { font-size: 10px; color: #ccc; }
+    .bairro-frescura.fresco { color: #2d7a3a; }
+    .bairro-frescura.medio  { color: #b07d00; }
+    .bairro-frescura.antigo { color: #c0392b; }
+    .bomba-card {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .bomba-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .bomba-esq { display: flex; align-items: flex-start; gap: 9px; flex: 1; min-width: 0; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-verde    { background: #2d7a3a; }
+    .dot-amarelo  { background: #b07d00; }
+    .dot-vermelho { background: #c0392b; }
+    .dot-cinza    { background: #aaa; }
+    .bomba-info { min-width: 0; flex: 1; }
+    .bomba-nome { font-size: 13px; font-weight: 600; color: #1a1a18; }
+    .bomba-combustivel { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+    .pill-comb { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+    .pill-gasolina { background: #e3eef9; color: #185fa5; }
+    .pill-gasoleo  { background: #ede8f9; color: #5a3e9e; }
+    .pill-ambos    { background: #e8f5e9; color: #2d7a3a; }
+    .bomba-obs  { font-size: 11px; color: #666; margin-top: 3px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bomba-hora { font-size: 10px; color: #bbb; margin-top: 2px; }
+    .badge { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px; white-space: nowrap; }
+    .badge-verde    { background: #e8f5e9; color: #2d7a3a; }
+    .badge-amarelo  { background: #fff8e1; color: #b07d00; }
+    .badge-vermelho { background: #fdecea; color: #c0392b; }
+    .badge-cinza    { background: #f0f0f0; color: #888; }
+    .bomba-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid #f0f0ec;
+    }
+    .confirmar-btn {
+      background: none;
+      border: 1px solid #e0e0da;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .confirmar-btn:hover { border-color: #2d7a3a; color: #2d7a3a; }
+    .confirmar-btn.confirmado { border-color: #2d7a3a; color: #2d7a3a; background: #e8f5e9; }
+    .confirmar-count { font-size: 10px; color: #bbb; }
+    .vazio { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+    .loading { text-align: center; padding: 48px 20px; color: #888; font-size: 14px; }
+    .erro { margin: 16px; padding: 12px 16px; background: #fdecea; border-radius: 8px; font-size: 13px; color: #c0392b; }
+    .acoes-wrap {
+      padding: 12px 16px 0;
+      border-top: 1px solid #e8e8e4;
+      margin-top: 4px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .report-link {
+      display: block;
+      padding: 11px 16px;
+      background: #1a1a18;
+      color: #f5f5f0;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      text-decoration: none;
+    }
+    .report-link:hover { background: #333; }
+    .partilhar-btn {
+      display: block;
+      padding: 10px 16px;
+      background: #25d366;
+      color: #fff;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .partilhar-btn:hover { background: #1da851; }
+    .report-label { font-size: 11px; color: #aaa; text-align: center; padding-bottom: 20px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title" id="page-title">Há Combustível — Maputo</div>
+    <div class="header-sub" id="header-sub">a carregar...</div>
+  </div>
+  <button class="header-refresh" onclick="carregarDados()">↻ Atualizar</button>
+</div>
+
+<div class="banner-urgencia" id="banner-urgencia"></div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num num-verde" id="count-verde">—</div>
+    <div class="stat-label">disponível</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num num-amarelo" id="count-amarelo">—</div>
+    <div class="stat-label">com fila</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num num-vermelho" id="count-vermelho">—</div>
+    <div class="stat-label">esgotado</div>
+  </div>
+</div>
+
+<div class="minha-zona-bar">
+  <span class="zona-label">A minha zona:</span>
+  <select id="zona-select" onchange="guardarZona(this.value)">
+    <option value="">Todas as zonas</option>
+  </select>
+  <button class="zona-clear" onclick="limparZona()" title="Ver todas">✕</button>
+</div>
+
+<div class="filtros">
+  <button class="fbtn on" id="f-todos"    onclick="filtrar('todos',this)">Todos</button>
+  <button class="fbtn"    id="f-verde"    onclick="filtrar('verde',this)">Disponível</button>
+  <button class="fbtn"    id="f-amarelo"  onclick="filtrar('amarelo',this)">Com fila</button>
+  <button class="fbtn"    id="f-vermelho" onclick="filtrar('vermelho',this)">Esgotado</button>
+  <div class="filtros-sep"></div>
+  <button class="fbtn"    id="f-gasolina" onclick="filtrarComb('gasolina',this)">Gasolina</button>
+  <button class="fbtn"    id="f-gasoleo"  onclick="filtrarComb('gasoleo',this)">Gasóleo</button>
+</div>
+
+<div class="lista" id="lista">
+  <div class="loading">A carregar bombas...</div>
+</div>
+
+<div class="acoes-wrap">
+  <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform" target="_blank">+ Reportar uma bomba</a>
+  <button class="partilhar-btn" onclick="partilharWhatsApp()">Partilhar situação agora no WhatsApp</button>
+  <div class="report-label">Leva menos de 30 segundos. Os dados são partilhados com a comunidade.</div>
+</div>
+
+<script>
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?gid=1155091876&single=true&output=csv';
+  const REFRESH_MS = 5 * 60 * 1000;
+
+  let todosOsDados = [];
+  let dados = [];
+  let filtroStatus = 'todos';
+  let filtroComb = 'todos';
+  let zonaActiva = localStorage.getItem('minhaZona') || '';
+  let confirmacoes = JSON.parse(localStorage.getItem('confirmacoes') || '{}');
+
+  function normalizarStatus(raw) {
+    if (!raw) return 'cinza';
+    const r = raw.toLowerCase();
+    if (r.includes('sem fila') || (r.includes('disponível') && !r.includes('fila'))) return 'verde';
+    if (r.includes('fila') || r.includes('com fila')) return 'amarelo';
+    if (r.includes('esgotado')) return 'vermelho';
+    return 'cinza';
+  }
+
+  function badgeLabel(s) {
+    return { verde: 'Disponível', amarelo: 'Com fila', vermelho: 'Esgotado', cinza: '?' }[s] || '?';
+  }
+
+  function parseData(ts) {
+    if (!ts) return null;
+    const m = ts.match(/(\\d{2})\\/(\\d{2})\\/(\\d{4})\\s+(\\d{2}):(\\d{2}):(\\d{2})/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  }
+
+  function tempoRelativo(ts) {
+    if (!ts) return '';
+    const d = new Date(ts);
+    if (isNaN(d)) return '';
+    const diff = Math.floor((Date.now() - d) / 60000);
+    if (diff < 2)  return 'agora mesmo';
+    if (diff < 60) return `há ${diff} min`;
+    const h = Math.floor(diff / 60);
+    const m = diff % 60;
+    return m > 0 ? `há ${h}h ${m}min` : `há ${h}h`;
+  }
+
+  function parseCombustivel(raw) {
+    if (!raw) return [];
+    const r = raw.toLowerCase();
+    if (r.includes('ambos')) return ['ambos'];
+    const tipos = [];
+    if (r.includes('gasolina')) tipos.push('gasolina');
+    if (r.includes('gasóleo') || r.includes('gasoleo') || r.includes('diesel')) tipos.push('gasoleo');
+    return tipos;
+  }
+
+  function pillsCombustivel(tipos) {
+    if (!tipos.length) return '';
+    if (tipos.includes('ambos')) return '<span class="pill-comb pill-ambos">Gasolina + Gasóleo</span>';
+    return tipos.map(t => {
+      if (t === 'gasolina') return '<span class="pill-comb pill-gasolina">Gasolina</span>';
+      if (t === 'gasoleo')  return '<span class="pill-comb pill-gasoleo">Gasóleo</span>';
+      return '';
+    }).join('');
+  }
+
+  function parseLinha(linha) {
+    const campos = [];
+    let atual = '', dentroAspas = false;
+    for (let i = 0; i < linha.length; i++) {
+      if (linha[i] === '"') { dentroAspas = !dentroAspas; continue; }
+      if (linha[i] === ',' && !dentroAspas) { campos.push(atual.trim()); atual = ''; continue; }
+      atual += linha[i];
+    }
+    campos.push(atual.trim());
+    return campos;
+  }
+
+  function parseCSV(text) {
+    const linhas = text.trim().split('\n');
+    const cabecalho = parseLinha(linhas[0]).map(c => c.replace(/^[\s"'\uFEFF]+|[\s"']+$/g, ''));
+    return linhas.slice(1).map(linha => {
+      const campos = parseLinha(linha);
+      const obj = {};
+      cabecalho.forEach((k, i) => obj[k] = (campos[i] || '').replace(/^[\s"']+|[\s"']+$/g, ''));
+      return obj;
+    }).filter(r => r['Nome da bomba de combustível']);
+  }
+
+  function maisRecentePorBomba(lista) {
+    const mapa = {};
+    lista.forEach(p => {
+      const chave = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
+      const ts = new Date(p['Carimbo de data/hora']);
+      if (!mapa[chave] || ts > new Date(mapa[chave]['Carimbo de data/hora'])) {
+        mapa[chave] = p;
+      }
+    });
+    return Object.values(mapa);
+  }
+
+  function bairroReal(p) {
+    const outro = (p['Outro bairro. Qual?'] || '').trim();
+    const b = (p['Bairro'] || '').trim();
+    return outro || b || 'Outros';
+  }
+
+  function agruparPorBairro(lista) {
+    const grupos = {};
+    lista.forEach(p => {
+      const b = bairroReal(p);
+      if (!grupos[b]) grupos[b] = [];
+      grupos[b].push(p);
+    });
+    return grupos;
+  }
+
+  function frescuraLabel(tsStr) {
+    if (!tsStr) return { label: '', classe: '' };
+    const diff = Math.floor((Date.now() - new Date(tsStr)) / 60000);
+    if (diff < 30)  return { label: 'report recente', classe: 'fresco' };
+    if (diff < 120) return { label: `report há ${diff} min`, classe: 'medio' };
+    const h = Math.floor(diff / 60);
+    return { label: `report há ${h}h — pode estar desatualizado`, classe: 'antigo' };
+  }
+
+  function atualizarBanner(grupos) {
+    const esgotados = [];
+    Object.entries(grupos).forEach(([bairro, bombas]) => {
+      const todasEsgotadas = bombas.every(p => normalizarStatus(p['Status']) === 'vermelho');
+      if (todasEsgotadas) esgotados.push(bairro);
+    });
+    const banner = document.getElementById('banner-urgencia');
+    if (esgotados.length >= 3) {
+      banner.textContent = `⚠ Sem combustível reportado em: ${esgotados.slice(0, 5).join(', ')}`;
+      banner.classList.add('visivel');
+    } else {
+      banner.classList.remove('visivel');
+    }
+  }
+
+  function popularSelectZona(bairros) {
+    const sel = document.getElementById('zona-select');
+    sel.innerHTML = '<option value="">Todas as zonas</option>';
+    bairros.sort().forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = b;
+      if (b === zonaActiva) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function guardarZona(val) {
+    zonaActiva = val;
+    localStorage.setItem('minhaZona', val);
+    renderizar();
+  }
+
+  function limparZona() {
+    zonaActiva = '';
+    localStorage.removeItem('minhaZona');
+    document.getElementById('zona-select').value = '';
+    renderizar();
+  }
+
+  function confirmar(chave, btn) {
+    if (confirmacoes[chave]) return;
+    confirmacoes[chave] = true;
+    localStorage.setItem('confirmacoes', JSON.stringify(confirmacoes));
+    btn.classList.add('confirmado');
+    btn.textContent = '✓ Confirmado';
+  }
+
+  function renderizar() {
+    let filtrados = dados;
+    if (zonaActiva) filtrados = filtrados.filter(p => bairroReal(p) === zonaActiva);
+    if (filtroStatus !== 'todos') filtrados = filtrados.filter(p => normalizarStatus(p['Status']) === filtroStatus);
+    if (filtroComb !== 'todos') {
+      filtrados = filtrados.filter(p => {
+        const tipos = parseCombustivel(p['Tipo de combustível']);
+        return tipos.includes(filtroComb) || tipos.includes('ambos');
+      });
+    }
+
+    const grupos = agruparPorBairro(filtrados);
+    const todosGrupos = agruparPorBairro(dados);
+    atualizarBanner(todosGrupos);
+
+    const bairros = Object.keys(grupos).sort();
+    if (!bairros.length) {
+      document.getElementById('lista').innerHTML = '<div class="vazio">Nenhuma bomba com este filtro agora.</div>';
+      return;
+    }
+
+    let html = '';
+    bairros.forEach(bairro => {
+      const bombas = grupos[bairro];
+      const maisRecente = bombas.reduce((a, b) =>
+        new Date(a['Carimbo de data/hora']) > new Date(b['Carimbo de data/hora']) ? a : b
+      );
+      const frescura = frescuraLabel(maisRecente['Carimbo de data/hora']);
+
+      html += `<div class="bairro-bloco">
+        <div class="bairro-header">
+          <div class="bairro-titulo">${bairro}</div>
+          <div class="bairro-frescura ${frescura.classe}">${frescura.label}</div>
+        </div>`;
+
+      bombas.forEach(p => {
+        const status = normalizarStatus(p['Status']);
+        const ref    = (p['Referências sobre a bomba'] || '').trim();
+        const obs    = (p['Observações'] || '').trim();
+        const hora   = tempoRelativo(p['Carimbo de data/hora']);
+        const detalhe = ref || obs;
+        const tipos  = parseCombustivel(p['Tipo de combustível']);
+        const chave  = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
+        const jaConfirmou = !!confirmacoes[chave];
+
+        html += `
+          <div class="bomba-card">
+            <div class="bomba-card-top">
+              <div class="bomba-esq">
+                <div class="dot dot-${status}"></div>
+                <div class="bomba-info">
+                  <div class="bomba-nome">${p['Nome da bomba de combustível']}</div>
+                  ${tipos.length ? `<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>` : ''}
+                  ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
+                  ${hora ? `<div class="bomba-hora">${hora}</div>` : ''}
+                </div>
+              </div>
+              <div class="badge badge-${status}">${badgeLabel(status)}</div>
+            </div>
+            <div class="bomba-card-footer">
+              <button class="confirmar-btn ${jaConfirmou ? 'confirmado' : ''}"
+                onclick="confirmar('${chave.replace(/'/g,"\\'")}', this)">
+                ${jaConfirmou ? '✓ Confirmado' : '✓ Confirmar'}
+              </button>
+              <span class="confirmar-count"></span>
+            </div>
+          </div>`;
+      });
+
+      html += `</div>`;
+    });
+
+    document.getElementById('lista').innerHTML = html;
+  }
+
+  function filtrar(f, btn) {
+    filtroStatus = f;
+    ['todos','verde','amarelo','vermelho'].forEach(id => {
+      document.getElementById('f-' + id).className = 'fbtn';
+    });
+    const classes = { todos: 'fbtn on', verde: 'fbtn on-verde', amarelo: 'fbtn on-amarelo', vermelho: 'fbtn on-verm' };
+    btn.className = classes[f];
+    renderizar();
+  }
+
+  function filtrarComb(f, btn) {
+    if (filtroComb === f) {
+      filtroComb = 'todos';
+      btn.className = 'fbtn';
+    } else {
+      filtroComb = f;
+      document.getElementById('f-gasolina').className = 'fbtn';
+      document.getElementById('f-gasoleo').className  = 'fbtn';
+      btn.className = f === 'gasolina' ? 'fbtn on-gasolina' : 'fbtn on-gasoleo';
+    }
+    renderizar();
+  }
+
+  function partilharWhatsApp() {
+    const grupos = agruparPorBairro(dados);
+    const linhas = ['*Há Combustível — Maputo* (situação agora)'];
+    Object.keys(grupos).sort().forEach(bairro => {
+      const disponiveis = grupos[bairro].filter(p => normalizarStatus(p['Status']) !== 'vermelho');
+      if (disponiveis.length) {
+        linhas.push(`\n*${bairro}*`);
+        disponiveis.forEach(p => {
+          const s = normalizarStatus(p['Status']);
+          const emoji = s === 'verde' ? '✅' : '⏳';
+          const tipos = parseCombustivel(p['Tipo de combustível']);
+          const comb = tipos.includes('ambos') ? ' (gas+diesel)' : tipos.includes('gasolina') ? ' (gasolina)' : tipos.includes('gasoleo') ? ' (gasóleo)' : '';
+          linhas.push(`${emoji} ${p['Nome da bomba de combustível']}${comb}`);
+        });
+      }
+    });
+    linhas.push(`\nVer tudo em tempo real:\nhttps://nowledge-mz.github.io/hacombustivel`);
+    const texto = encodeURIComponent(linhas.join('\n'));
+    window.open(`https://wa.me/?text=${texto}`, '_blank');
+  }
+
+  async function carregarDados() {
+    document.getElementById('header-sub').textContent = 'a atualizar...';
+    try {
+      const resp = await fetch(SHEET_URL + '&t=' + Date.now());
+      const text = await resp.text();
+      todosOsDados = parseCSV(text);
+      dados = maisRecentePorBomba(todosOsDados);
+
+      let nV = 0, nA = 0, nR = 0;
+      dados.forEach(p => {
+        const s = normalizarStatus(p['Status']);
+        if (s === 'verde')         nV++;
+        else if (s === 'amarelo')  nA++;
+        else if (s === 'vermelho') nR++;
+      });
+
+      document.getElementById('count-verde').textContent    = nV;
+      document.getElementById('count-amarelo').textContent  = nA;
+      document.getElementById('count-vermelho').textContent = nR;
+
+      const disponiveis = nV + nA;
+      document.getElementById('page-title').textContent = `(${disponiveis} disponíveis) Há Combustível`;
+      document.title = `(${disponiveis} disponíveis) Há Combustível — Maputo`;
+
+      const agora = new Date().toLocaleTimeString('pt-MZ', { hour: '2-digit', minute: '2-digit' });
+      document.getElementById('header-sub').textContent = `${todosOsDados.length} reports hoje · ${agora}`;
+
+      const bairros = [...new Set(dados.map(p => bairroReal(p)))];
+      popularSelectZona(bairros);
+
+      renderizar();
+    } catch (e) {
+      document.getElementById('header-sub').textContent = 'erro ao carregar';
+      document.getElementById('lista').innerHTML = '<div class="erro">Não foi possível carregar os dados. Verifica a ligação e tenta novamente.</div>';
+    }
+  }
+
+  carregarDados();
+  setInterval(carregarDados, REFRESH_MS);
+</script>
+</body>
+</html>
