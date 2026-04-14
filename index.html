@@ -306,16 +306,15 @@
 
   function parseData(ts) {
     if (!ts) return null;
-    const m = ts.match(/(\\d{2})\\/(\\d{2})\\/(\\d{4})\\s+(\\d{2}):(\\d{2}):(\\d{2})/);
+    const m = ts.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
     if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
     const d = new Date(ts);
     return isNaN(d) ? null : d;
   }
 
   function tempoRelativo(ts) {
-    if (!ts) return '';
-    const d = new Date(ts);
-    if (isNaN(d)) return '';
+    const d = parseData(ts);
+    if (!d) return '';
     const diff = Math.floor((Date.now() - d) / 60000);
     if (diff < 2)  return 'agora mesmo';
     if (diff < 60) return `há ${diff} min`;
@@ -371,8 +370,8 @@
     const mapa = {};
     lista.forEach(p => {
       const chave = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
-      const ts = new Date(p['Carimbo de data/hora']);
-      if (!mapa[chave] || ts > new Date(mapa[chave]['Carimbo de data/hora'])) {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!mapa[chave] || (ts && ts > (parseData(mapa[chave]['Carimbo de data/hora']) || 0))) {
         mapa[chave] = p;
       }
     });
@@ -397,7 +396,8 @@
 
   function frescuraLabel(tsStr) {
     if (!tsStr) return { label: '', classe: '' };
-    const diff = Math.floor((Date.now() - new Date(tsStr)) / 60000);
+    const d = parseData(tsStr); if (!d) return { label: '', classe: '' };
+    const diff = Math.floor((Date.now() - d) / 60000);
     if (diff < 30)  return { label: 'report recente', classe: 'fresco' };
     if (diff < 120) return { label: `report há ${diff} min`, classe: 'medio' };
     const h = Math.floor(diff / 60);
