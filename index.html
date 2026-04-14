@@ -458,7 +458,7 @@
     if (filtroStatus !== 'todos') filtrados = filtrados.filter(p => normalizarStatus(p['Status']) === filtroStatus);
     if (filtroComb !== 'todos') {
       filtrados = filtrados.filter(p => {
-        const tipos = parseCombustivel(p['Tipo de combustível']);
+        const tipos = parseCombustivel(p['Que tipo de combustível está disponível?']);
         return tipos.includes(filtroComb) || tipos.includes('ambos');
       });
     }
@@ -493,7 +493,7 @@
         const obs    = (p['Observações'] || '').trim();
         const hora   = tempoRelativo(p['Carimbo de data/hora']);
         const detalhe = ref || obs;
-        const tipos  = parseCombustivel(p['Tipo de combustível']);
+        const tipos  = parseCombustivel(p['Que tipo de combustível está disponível?']);
         const chave  = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
         const jaConfirmou = !!confirmacoes[chave];
 
@@ -560,7 +560,7 @@
         disponiveis.forEach(p => {
           const s = normalizarStatus(p['Status']);
           const emoji = s === 'verde' ? '✅' : '⏳';
-          const tipos = parseCombustivel(p['Tipo de combustível']);
+          const tipos = parseCombustivel(p['Que tipo de combustível está disponível?']);
           const comb = tipos.includes('ambos') ? ' (gas+diesel)' : tipos.includes('gasolina') ? ' (gasolina)' : tipos.includes('gasoleo') ? ' (gasóleo)' : '';
           linhas.push(`${emoji} ${p['Nome da bomba de combustível']}${comb}`);
         });
