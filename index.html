@@ -223,6 +223,78 @@
     }
     .partilhar-btn:hover { background: #1da851; }
     .report-label { font-size: 11px; color: #aaa; text-align: center; padding-bottom: 20px; }
+    .report-count {
+      font-size: 10px;
+      color: #aaa;
+      margin-top: 2px;
+      font-weight: 500;
+    }
+    .report-count.alto { color: #2d7a3a; }
+    .report-count.medio { color: #b07d00; }
+
+    .banner-colab {
+      background: #e8f5e9;
+      border-bottom: 1px solid #c8e6c9;
+      padding: 7px 16px;
+      font-size: 12px;
+      color: #2d7a3a;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .alerta-transito {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #b07d00;
+      display: none;
+    }
+    .alerta-transito.visivel { display: block; }
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a18;
+      color: #f5f5f0;
+      border: none;
+      border-radius: 28px;
+      padding: 14px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      text-decoration: none;
+      display: inline-block;
+    }
+    .fab:hover { background: #333; }
+    .fab-spacer { height: 72px; }
+    .countdown-bar {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      padding: 5px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #aaa;
+    }
+    .countdown-progress {
+      flex: 1;
+      height: 2px;
+      background: #f0f0ec;
+      border-radius: 2px;
+      margin: 0 10px;
+      overflow: hidden;
+    }
+    .countdown-fill {
+      height: 100%;
+      background: #2d7a3a;
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
   </style>
 </head>
 <body>
@@ -236,6 +308,13 @@
 </div>
 
 <div class="banner-urgencia" id="banner-urgencia"></div>
+<div class="banner-colab">Este mapa és tu. Reporta o que vês — ajuda toda a gente.</div>
+<div class="alerta-transito" id="alerta-transito"></div>
+<div class="countdown-bar">
+  <span id="countdown-label">próxima atualização</span>
+  <div class="countdown-progress"><div class="countdown-fill" id="countdown-fill" style="width:100%"></div></div>
+  <span id="countdown-num">10:00</span>
+</div>
 
 <div class="stats-row">
   <div class="stat-card">
@@ -274,15 +353,12 @@
   <div class="loading">A carregar bombas...</div>
 </div>
 
-<div class="acoes-wrap">
-  <a class="report-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform" target="_blank">+ Reportar uma bomba</a>
-  <button class="partilhar-btn" onclick="partilharWhatsApp()">Partilhar situação agora no WhatsApp</button>
-  <div class="report-label">Leva menos de 30 segundos. Os dados são partilhados com a comunidade.</div>
-</div>
+<div class="fab-spacer"></div>
+<a class="fab" href="https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform" target="_blank">+ Reportar uma bomba</a>
 
 <script>
   const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?gid=1155091876&single=true&output=csv';
-  const REFRESH_MS = 5 * 60 * 1000;
+  const REFRESH_MS = 10 * 60 * 1000;
 
   let todosOsDados = [];
   let dados = [];
@@ -378,6 +454,19 @@
     return Object.values(mapa);
   }
 
+  function contarReports(todosRaw, nomeBomba, bairro, status) {
+    const agora = Date.now();
+    const limite = 3 * 60 * 60 * 1000;
+    return todosRaw.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return false;
+      const mesmaBomba = (p['Nome da bomba de combustível'] || '').toLowerCase().trim() === nomeBomba.toLowerCase().trim();
+      const mesmoBairro = bairroReal(p) === bairro;
+      const mesmoStatus = normalizarStatus(p['Status']) === status;
+      return mesmaBomba && mesmoBairro && mesmoStatus;
+    }).length;
+  }
+
   function bairroReal(p) {
     const outro = (p['Outro bairro. Qual?'] || '').trim();
     const b = (p['Bairro'] || '').trim();
@@ -402,6 +491,31 @@
     if (diff < 120) return { label: `report há ${diff} min`, classe: 'medio' };
     const h = Math.floor(diff / 60);
     return { label: `report há ${h}h — pode estar desatualizado`, classe: 'antigo' };
+  }
+
+  function atualizarAlertaTransito(todosRaw) {
+    const agora = Date.now();
+    const limite = 30 * 60 * 1000;
+    const bairrosComFila = {};
+    todosRaw.forEach(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return;
+      const s = normalizarStatus(p['Status']);
+      if (s !== 'amarelo') return;
+      const b = bairroReal(p);
+      bairrosComFila[b] = (bairrosComFila[b] || 0) + 1;
+    });
+    const criticos = Object.entries(bairrosComFila)
+      .filter(([,n]) => n >= 3)
+      .sort((a,b) => b[1]-a[1])
+      .map(([b]) => b);
+    const el = document.getElementById('alerta-transito');
+    if (criticos.length) {
+      el.textContent = '⚠ Trânsito provável em: ' + criticos.slice(0,4).join(', ') + ' — várias bombas com fila na última meia hora.';
+      el.classList.add('visivel');
+    } else {
+      el.classList.remove('visivel');
+    }
   }
 
   function atualizarBanner(grupos) {
@@ -487,6 +601,7 @@
           <div class="bairro-frescura ${frescura.classe}">${frescura.label}</div>
         </div>`;
 
+      bombas.sort((a,b) => (parseData(b['Carimbo de data/hora'])||0) - (parseData(a['Carimbo de data/hora'])||0));
       bombas.forEach(p => {
         const status = normalizarStatus(p['Status']);
         const ref    = (p['Referências sobre a bomba'] || '').trim();
@@ -496,6 +611,9 @@
         const tipos  = parseCombustivel(p['Que tipo de combustível está disponível?']);
         const chave  = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
         const jaConfirmou = !!confirmacoes[chave];
+        const nReports = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), normalizarStatus(p['Status']));
+        const reportClass = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
+        const reportLabel = nReports >= 2 ? `${nReports} reports confirmam` : nReports === 1 ? '1 report' : '';
 
         html += `
           <div class="bomba-card">
@@ -507,6 +625,7 @@
                   ${tipos.length ? `<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>` : ''}
                   ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
                   ${hora ? `<div class="bomba-hora">${hora}</div>` : ''}
+                  ${reportLabel ? `<div class="report-count ${reportClass}">${reportLabel}</div>` : ''}
                 </div>
               </div>
               <div class="badge badge-${status}">${badgeLabel(status)}</div>
@@ -574,7 +693,10 @@
   async function carregarDados() {
     document.getElementById('header-sub').textContent = 'a atualizar...';
     try {
-      const resp = await fetch(SHEET_URL + '&t=' + Date.now());
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(SHEET_URL + '&t=' + Date.now(), { signal: controller.signal });
+      clearTimeout(timeout);
       const text = await resp.text();
       todosOsDados = parseCSV(text);
       dados = maisRecentePorBomba(todosOsDados);
@@ -600,16 +722,43 @@
 
       const bairros = [...new Set(dados.map(p => bairroReal(p)))];
       popularSelectZona(bairros);
-
+      atualizarAlertaTransito(todosOsDados);
       renderizar();
     } catch (e) {
-      document.getElementById('header-sub').textContent = 'erro ao carregar';
-      document.getElementById('lista').innerHTML = '<div class="erro">Não foi possível carregar os dados. Verifica a ligação e tenta novamente.</div>';
+      const msg = e.name === 'AbortError' ? 'ligação lenta — tenta atualizar' : 'erro ao carregar';
+      document.getElementById('header-sub').textContent = msg;
+      document.getElementById('lista').innerHTML = '<div class="erro">Não foi possível carregar os dados. Pode ser ligação fraca ou o servidor está ocupado. Tenta clicar em ↻ Atualizar em alguns segundos.</div>';
     }
   }
 
-  carregarDados();
-  setInterval(carregarDados, REFRESH_MS);
+  let countdownInterval = null;
+  let nextRefresh = Date.now() + REFRESH_MS;
+
+  function iniciarCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    nextRefresh = Date.now() + REFRESH_MS;
+    countdownInterval = setInterval(() => {
+      const restante = Math.max(0, nextRefresh - Date.now());
+      const mins = Math.floor(restante / 60000);
+      const secs = Math.floor((restante % 60000) / 1000);
+      const pct = Math.round((restante / REFRESH_MS) * 100);
+      document.getElementById('countdown-num').textContent =
+        mins + ':' + String(secs).padStart(2,'0');
+      document.getElementById('countdown-fill').style.width = pct + '%';
+      if (restante === 0) {
+        carregarDados();
+        iniciarCountdown();
+      }
+    }, 1000);
+  }
+
+  async function carregarEIniciar() {
+    await carregarDados();
+    iniciarCountdown();
+  }
+
+  carregarEIniciar();
+  setInterval(() => { carregarDados(); iniciarCountdown(); }, REFRESH_MS);
 </script>
 </body>
 </html>
