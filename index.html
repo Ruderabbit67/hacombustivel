@@ -590,15 +590,9 @@
     let html = '';
     bairros.forEach(bairro => {
       const bombas = grupos[bairro];
-      const maisRecente = bombas.reduce((a, b) =>
-        new Date(a['Carimbo de data/hora']) > new Date(b['Carimbo de data/hora']) ? a : b
-      );
-      const frescura = frescuraLabel(maisRecente['Carimbo de data/hora']);
-
       html += `<div class="bairro-bloco">
         <div class="bairro-header">
           <div class="bairro-titulo">${bairro}</div>
-          <div class="bairro-frescura ${frescura.classe}">${frescura.label}</div>
         </div>`;
 
       bombas.sort((a,b) => (parseData(b['Carimbo de data/hora'])||0) - (parseData(a['Carimbo de data/hora'])||0));
@@ -614,6 +608,7 @@
         const nReports = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), normalizarStatus(p['Status']));
         const reportClass = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
         const reportLabel = nReports >= 2 ? `${nReports} reports confirmam` : nReports === 1 ? '1 report' : '';
+        const frescura = frescuraLabel(p['Carimbo de data/hora']);
 
         html += `
           <div class="bomba-card">
@@ -624,7 +619,7 @@
                   <div class="bomba-nome">${p['Nome da bomba de combustível']}</div>
                   ${tipos.length ? `<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>` : ''}
                   ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
-                  ${hora ? `<div class="bomba-hora">${hora}</div>` : ''}
+                  ${hora ? `<div class="bomba-hora">${hora}${frescura.classe === 'antigo' ? ` <span style="color:#c0392b;font-style:normal">· pode estar desatualizado</span>` : ''}</div>` : ''}
                   ${reportLabel ? `<div class="report-count ${reportClass}">${reportLabel}</div>` : ''}
                 </div>
               </div>
