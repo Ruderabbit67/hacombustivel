@@ -112,6 +112,7 @@
     .fbtn.on-gasolina { background: #185fa5; color: #fff; border-color: #185fa5; }
     .fbtn.on-gasoleo  { background: #5a3e9e; color: #fff; border-color: #5a3e9e; }
     .filtros-sep { width: 1px; background: #e8e8e4; margin: 2px; align-self: stretch; }
+    .fbtn.on-recentes { background: #0f6e56; color: #fff; border-color: #0f6e56; }
     .lista { padding: 0 16px 16px; }
     .bairro-bloco { margin-bottom: 4px; }
     .bairro-header {
@@ -345,6 +346,8 @@
   <button class="fbtn"    id="f-amarelo"  onclick="filtrar('amarelo',this)">Com fila</button>
   <button class="fbtn"    id="f-vermelho" onclick="filtrar('vermelho',this)">Esgotado</button>
   <div class="filtros-sep"></div>
+  <button class="fbtn"    id="f-recentes" onclick="filtrarRecentes(this)">+ Recentes</button>
+  <div class="filtros-sep"></div>
   <button class="fbtn"    id="f-gasolina" onclick="filtrarComb('gasolina',this)">Gasolina</button>
   <button class="fbtn"    id="f-gasoleo"  onclick="filtrarComb('gasoleo',this)">Gasóleo</button>
 </div>
@@ -364,6 +367,7 @@
   let dados = [];
   let filtroStatus = 'todos';
   let filtroComb = 'todos';
+  let filtroRecentes = false;
   let zonaActiva = localStorage.getItem('minhaZona') || '';
   let confirmacoes = JSON.parse(localStorage.getItem('confirmacoes') || '{}');
 
@@ -495,7 +499,7 @@
 
   function atualizarAlertaTransito(todosRaw) {
     const agora = Date.now();
-    const limite = 30 * 60 * 1000;
+    const limite = 60 * 60 * 1000;
     const bairrosComFila = {};
     todosRaw.forEach(p => {
       const ts = parseData(p['Carimbo de data/hora']);
@@ -506,7 +510,7 @@
       bairrosComFila[b] = (bairrosComFila[b] || 0) + 1;
     });
     const criticos = Object.entries(bairrosComFila)
-      .filter(([,n]) => n >= 3)
+      .filter(([,n]) => n >= 2)
       .sort((a,b) => b[1]-a[1])
       .map(([b]) => b);
     const el = document.getElementById('alerta-transito');
@@ -574,6 +578,13 @@
       filtrados = filtrados.filter(p => {
         const tipos = parseCombustivel(p['Que tipo de combustível está disponível?']);
         return tipos.includes(filtroComb) || tipos.includes('ambos');
+      });
+    }
+    if (filtroRecentes) {
+      const umaHora = 60 * 60 * 1000;
+      filtrados = filtrados.filter(p => {
+        const ts = parseData(p['Carimbo de data/hora']);
+        return ts && (Date.now() - ts) <= umaHora;
       });
     }
 
@@ -648,6 +659,12 @@
     });
     const classes = { todos: 'fbtn on', verde: 'fbtn on-verde', amarelo: 'fbtn on-amarelo', vermelho: 'fbtn on-verm' };
     btn.className = classes[f];
+    renderizar();
+  }
+
+  function filtrarRecentes(btn) {
+    filtroRecentes = !filtroRecentes;
+    btn.className = filtroRecentes ? 'fbtn on-recentes' : 'fbtn';
     renderizar();
   }
 
