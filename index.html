@@ -276,6 +276,66 @@
     }
     .fab:hover { background: #333; }
     .fab-spacer { height: 72px; }
+    .modo-tabs {
+      display: flex;
+      background: var(--color-background-primary, #fff);
+      border-bottom: 1px solid #e8e8e4;
+    }
+    .modo-tab {
+      flex: 1;
+      padding: 9px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      color: #aaa;
+      border-bottom: 2px solid transparent;
+    }
+    .modo-tab.on-lista  { color: #2d7a3a; border-bottom-color: #2d7a3a; }
+    .modo-tab.on-resumo { color: #185fa5; border-bottom-color: #185fa5; }
+    .resumo-box {
+      background: var(--color-background-primary, #fff);
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0 8px;
+      font-size: 14px;
+      color: #1a1a18;
+      line-height: 1.7;
+    }
+    .resumo-titulo {
+      font-size: 11px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+      margin-bottom: 8px;
+    }
+    .resumo-zona { margin-bottom: 10px; }
+    .resumo-zona-nome { font-weight: 700; color: #1a1a18; }
+    .resumo-zona-txt { color: #444; font-size: 13px; }
+    .partilhar-resumo {
+      display: block;
+      margin: 12px 0 0;
+      padding: 12px;
+      background: #25d366;
+      color: #fff;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .toggle-historico {
+      font-size: 11px;
+      color: #185fa5;
+      text-align: center;
+      padding: 6px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
   </style>
 </head>
 <body>
@@ -319,20 +379,29 @@
   </select>
 </div>
 
-<div class="filtros">
-  <button class="fbtn on" id="f-todos"    onclick="filtrar('todos',this)">Todos</button>
-  <button class="fbtn"    id="f-verde"    onclick="filtrar('verde',this)">Disponível</button>
-  <button class="fbtn"    id="f-amarelo"  onclick="filtrar('amarelo',this)">Com fila</button>
-  <button class="fbtn"    id="f-vermelho" onclick="filtrar('vermelho',this)">Esgotado</button>
-  <div class="filtros-sep"></div>
-  <button class="fbtn"    id="f-recentes" onclick="filtrarRecentes(this)">+ Recentes</button>
-  <div class="filtros-sep"></div>
-  <button class="fbtn"    id="f-gasolina" onclick="filtrarComb('gasolina',this)">Gasolina</button>
-  <button class="fbtn"    id="f-gasoleo"  onclick="filtrarComb('gasoleo',this)">Gasóleo</button>
+<div class="modo-tabs">
+  <div class="modo-tab on-lista" id="tab-lista" onclick="mudarModo('lista',this)">Lista de bombas</div>
+  <div class="modo-tab" id="tab-resumo" onclick="mudarModo('resumo',this)">Situação agora</div>
 </div>
 
-<div class="lista" id="lista">
-  <div class="loading">A carregar bombas...</div>
+<div id="painel-lista">
+  <div class="filtros">
+    <button class="fbtn on" id="f-todos"    onclick="filtrar('todos',this)">Todos</button>
+    <button class="fbtn"    id="f-verde"    onclick="filtrar('verde',this)">Disponível</button>
+    <button class="fbtn"    id="f-amarelo"  onclick="filtrar('amarelo',this)">Com fila</button>
+    <button class="fbtn"    id="f-vermelho" onclick="filtrar('vermelho',this)">Esgotado</button>
+    <div class="filtros-sep"></div>
+    <button class="fbtn"    id="f-recentes" onclick="filtrarRecentes(this)">+ Recentes</button>
+    <div class="filtros-sep"></div>
+    <button class="fbtn"    id="f-gasolina" onclick="filtrarComb('gasolina',this)">Gasolina</button>
+    <button class="fbtn"    id="f-gasoleo"  onclick="filtrarComb('gasoleo',this)">Gasóleo</button>
+  </div>
+  <div class="lista" id="lista">
+    <div class="loading">A carregar bombas...</div>
+  </div>
+</div>
+
+<div id="painel-resumo" style="display:none;padding:0 16px 16px;">
 </div>
 
 <div class="fab-spacer"></div>
@@ -350,6 +419,127 @@
   let filtroRecentes = false;
   let zonaActiva = localStorage.getItem('minhaZona') || '';
   let confirmacoes = JSON.parse(localStorage.getItem('confirmacoes') || '{}');
+
+  let modoActivo = 'lista';
+  let mostrarHistorico = false;
+  const LIMITE_HORAS = 3;
+
+  function mudarModo(modo, btn) {
+    modoActivo = modo;
+    document.querySelectorAll('.modo-tab').forEach(b => b.className = 'modo-tab');
+    btn.className = 'modo-tab on-' + modo;
+    document.getElementById('painel-lista').style.display  = modo === 'lista'  ? 'block' : 'none';
+    document.getElementById('painel-resumo').style.display = modo === 'resumo' ? 'block' : 'none';
+    if (modo === 'resumo') renderizarResumo();
+  }
+
+  function toggleHistorico() {
+    mostrarHistorico = !mostrarHistorico;
+    renderizar();
+  }
+
+  function infoCombu(bombas) {
+    const tipos = new Set();
+    bombas.forEach(p => {
+      const t = parseCombustivel(p['Que tipo de combustível está disponível?']);
+      t.forEach(x => tipos.add(x));
+    });
+    if (tipos.has('ambos')) return 'gasolina e gasóleo';
+    const arr = [...tipos];
+    if (arr.includes('gasolina') && arr.includes('gasoleo')) return 'gasolina e gasóleo';
+    if (arr.includes('gasolina')) return 'só gasolina';
+    if (arr.includes('gasoleo')) return 'só gasóleo';
+    return '';
+  }
+
+  function frescuraBairro(bombas) {
+    const agora = Date.now();
+    const maisRecente = bombas.reduce((best, p) => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return (ts && (!best || ts > best)) ? ts : best;
+    }, null);
+    if (!maisRecente) return 'info antiga';
+    const diff = Math.floor((agora - maisRecente) / 60000);
+    if (diff < 5)  return 'agora mesmo';
+    if (diff < 60) return `há ${diff} min`;
+    const h = Math.floor(diff / 60);
+    return `há ${h}h`;
+  }
+
+  function gerarResumo(dados) {
+    const grupos = agruparPorBairro(dados);
+    const bairros = Object.keys(grupos).sort();
+    const linhasWA = ['*Há Combustível — Maputo* (situação agora)'];
+
+    const bDisp = [], bFila = [], bEsgo = [];
+    bairros.forEach(b => {
+      const bombas = grupos[b];
+      const nDisp = bombas.filter(p => normalizarStatus(p['Status']) === 'verde').length;
+      const nFila = bombas.filter(p => normalizarStatus(p['Status']) === 'amarelo').length;
+      const nEsgo = bombas.filter(p => normalizarStatus(p['Status']) === 'vermelho').length;
+      const dispBombas = bombas.filter(p => normalizarStatus(p['Status']) !== 'vermelho');
+      const comb = infoCombu(dispBombas);
+      const when = frescuraBairro(bombas);
+      if (nEsgo === bombas.length) bEsgo.push({b, when});
+      else if (nFila > 0 && nDisp === 0) bFila.push({b, comb, when});
+      else if (nDisp > 0) bDisp.push({b, comb, when});
+    });
+
+    const hora = new Date().toLocaleTimeString('pt-MZ', {hour:'2-digit', minute:'2-digit'});
+    let txt = `<div class="resumo-titulo">Situação às ${hora}</div>`;
+
+    if (bDisp.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">✅ Sem fila</span><br>`;
+      bDisp.slice(0,5).forEach(({b, comb, when}) => {
+        const combTxt = comb ? ` (${comb})` : '';
+        txt += `<span class="resumo-zona-txt"><b>${bairroExibicao(b)}</b>${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
+        linhasWA.push(`✅ ${bairroExibicao(b)}${combTxt} (${when})`);
+      });
+      txt += `</div>`;
+    }
+
+    if (bFila.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">⏳ Com fila mas tem</span><br>`;
+      bFila.slice(0,5).forEach(({b, comb, when}) => {
+        const combTxt = comb ? ` (${comb})` : '';
+        txt += `<span class="resumo-zona-txt"><b>${bairroExibicao(b)}</b>${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
+        linhasWA.push(`⏳ ${bairroExibicao(b)}${combTxt} (${when})`);
+      });
+      txt += `</div>`;
+    }
+
+    if (bEsgo.length) {
+      const nomes = bEsgo.slice(0,5).map(({b}) => bairroExibicao(b)).join(', ');
+      const frases = [
+        `Nada em ${nomes} — esgotado. Não percas tempo.`,
+        `${nomes} tá seco. Passa para outro lado.`,
+        `Evita ${nomes} — sem combustível reportado.`,
+      ];
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">❌ Esgotado</span><br><span class="resumo-zona-txt">${frases[Math.floor(Math.random()*frases.length)]}</span></div>`;
+      linhasWA.push(`❌ Esgotado: ${nomes}`);
+    }
+
+    linhasWA.push('\nVer tudo em tempo real 👉 https://nowledge-mz.github.io/hacombustivel');
+    linhasWA.push('Um projecto Nowledge 🇲🇿');
+    return { html: txt, wa: linhasWA.join('\n') };
+  }
+
+  function renderizarResumo() {
+    const tresHoras = LIMITE_HORAS * 60 * 60 * 1000;
+    const recentes = dados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return ts && (Date.now() - ts) <= tresHoras;
+    });
+    const { html, wa } = gerarResumo(recentes.length > 0 ? recentes : dados);
+    document.getElementById('painel-resumo').innerHTML = `
+      <div class="resumo-box">${html}</div>
+      <button class="partilhar-resumo" onclick="partilharResumoWA('${encodeURIComponent(wa)}')">Partilhar no WhatsApp</button>
+    `;
+  }
+
+  function partilharResumoWA(textoEnc) {
+    window.open('https://wa.me/?text=' + textoEnc, '_blank');
+  }
 
   const frasesConfirmar = [
     'Xi, continua igual!',
@@ -680,6 +870,18 @@
       html += `</div>`;
     });
 
+    const tresH2 = LIMITE_HORAS * 60 * 60 * 1000;
+    const nEscondidas = dados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return !ts || (Date.now() - ts) > tresH2;
+    }).length;
+
+    if (nEscondidas > 0 && !mostrarHistorico) {
+      html += `<div class="toggle-historico" onclick="toggleHistorico()">+ Ver mais ${nEscondidas} bomba${nEscondidas > 1 ? 's' : ''} com info antiga</div>`;
+    } else if (mostrarHistorico && nEscondidas > 0) {
+      html += `<div class="toggle-historico" onclick="toggleHistorico()">Ocultar bombas com info antiga</div>`;
+    }
+
     document.getElementById('lista').innerHTML = html;
   }
 
@@ -742,7 +944,13 @@
       clearTimeout(timeout);
       const text = await resp.text();
       todosOsDados = parseCSV(text);
-      dados = maisRecentePorBomba(todosOsDados);
+      const tresH = LIMITE_HORAS * 60 * 60 * 1000;
+      const recentes = todosOsDados.filter(p => {
+        const ts = parseData(p['Carimbo de data/hora']);
+        return ts && (Date.now() - ts) <= tresH;
+      });
+      const base = (recentes.length >= 5 ? recentes : todosOsDados);
+      dados = maisRecentePorBomba(base);
 
       let nV = 0, nA = 0, nR = 0;
       dados.forEach(p => {
