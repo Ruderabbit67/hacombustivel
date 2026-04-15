@@ -85,7 +85,7 @@
       background: #f9f9f9;
       color: #1a1a18;
     }
-    .zona-clear { background: none; border: none; color: #aaa; cursor: pointer; font-size: 14px; padding: 0 4px; }
+
     .filtros {
       display: flex;
       gap: 5px;
@@ -232,6 +232,36 @@
     }
     .report-count.alto { color: #2d7a3a; }
     .report-count.medio { color: #b07d00; }
+    .actualizar-btn {
+      background: none;
+      border: 1px solid #e0e0da;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #185fa5;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: inline-block;
+    }
+    .actualizar-btn:hover { border-color: #185fa5; background: #e3eef9; }
+    .nota-desatualizada {
+      background: #fff8e1;
+      border-left: 3px solid #b07d00;
+      padding: 7px 12px;
+      font-size: 11px;
+      color: #b07d00;
+      margin: 8px 0 4px;
+      border-radius: 0 6px 6px 0;
+    }
+    .bairro-raw {
+      font-size: 9px;
+      color: #ccc;
+      text-transform: none;
+      font-weight: 400;
+      letter-spacing: 0;
+      margin-left: 4px;
+    }
 
     .banner-colab {
       background: #e8f5e9;
@@ -337,7 +367,6 @@
   <select id="zona-select" onchange="guardarZona(this.value)">
     <option value="">Todas as zonas</option>
   </select>
-  <button class="zona-clear" onclick="limparZona()" title="Ver todas">✕</button>
 </div>
 
 <div class="filtros">
@@ -477,6 +506,25 @@
     return outro || b || 'Outros';
   }
 
+  function bairroExibicao(b) {
+    const sujos = [
+      'outro bairro - indique na pergunta abaixo',
+      'outro bairro',
+      'indique na pergunta abaixo',
+    ];
+    if (sujos.some(s => b.toLowerCase().includes(s))) return 'Outro bairro';
+    return b;
+  }
+
+  function notaDesatualizada(dados) {
+    const umaHora = 60 * 60 * 1000;
+    const antigas = dados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return !ts || (Date.now() - ts) > umaHora;
+    });
+    return antigas.length;
+  }
+
   function agruparPorBairro(lista) {
     const grupos = {};
     lista.forEach(p => {
@@ -551,15 +599,30 @@
 
   function guardarZona(val) {
     zonaActiva = val;
-    localStorage.setItem('minhaZona', val);
+    if (val) localStorage.setItem('minhaZona', val);
+    else localStorage.removeItem('minhaZona');
     renderizar();
   }
 
-  function limparZona() {
-    zonaActiva = '';
-    localStorage.removeItem('minhaZona');
-    document.getElementById('zona-select').value = '';
-    renderizar();
+
+
+  const frasesConfirmar = [
+    '✓ Xi, continua igual!',
+    '✓ Epa, ainda assim!',
+    '✓ Confirmado, mano',
+    '✓ Yah, é isso mesmo',
+    '✓ Nada mudou, irmão',
+  ];
+  const frasesActualizar = [
+    'Já melhorou? Conta aí!',
+    'Situação mudou? Reporta!',
+    'Ficou pior? Avisa!',
+    'Update, please!',
+    'Novidades? Reporta!',
+  ];
+
+  function fraseAleatoria(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
   }
 
   function confirmar(chave, btn) {
@@ -567,7 +630,7 @@
     confirmacoes[chave] = true;
     localStorage.setItem('confirmacoes', JSON.stringify(confirmacoes));
     btn.classList.add('confirmado');
-    btn.textContent = '✓ Confirmado';
+    btn.textContent = fraseAleatoria(frasesConfirmar);
   }
 
   function renderizar() {
