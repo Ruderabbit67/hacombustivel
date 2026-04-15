@@ -212,6 +212,7 @@
     .badge-vermelho { background: #fdecea; color: #c0392b; }
     .badge-cinza    { background: #f0f0f0; color: #888; }
     .report-count { font-size: 10px; color: #aaa; margin-top: 2px; font-weight: 500; }
+    .tempo-fila { font-size: 10px; color: #b07d00; font-weight: 600; margin-top: 2px; }
     .report-count.alto  { color: #2d7a3a; }
     .report-count.medio { color: #b07d00; }
     .bomba-card-footer {
@@ -469,6 +470,27 @@
     }).length;
   }
 
+  function calcularTempoMedio(todosRaw, nomeBomba, bairro) {
+    const agora = Date.now();
+    const limite = 2 * 60 * 60 * 1000;
+    const CAMPO = 'Quanto tempo esperaste na fila?';
+    const mapa = { 'Menos de 15 min': 8, '15 a 30 min': 22, '30 min a 1 hora': 45, 'Mais de 1 hora': 75 };
+    const valores = todosRaw.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return false;
+      const mesmaBomba = (p['Nome da bomba de combustível'] || '').toLowerCase().trim() === nomeBomba.toLowerCase().trim();
+      const mesmoBairro = bairroReal(p) === bairro;
+      const temTempo = p[CAMPO] && mapa[p[CAMPO]];
+      return mesmaBomba && mesmoBairro && temTempo;
+    }).map(p => mapa[p[CAMPO]]);
+    if (!valores.length) return null;
+    const media = Math.round(valores.reduce((a,b) => a+b, 0) / valores.length);
+    if (media < 15)  return 'menos de 15 min de fila';
+    if (media < 30)  return '~' + media + ' min de fila';
+    if (media < 60)  return '~' + media + ' min de fila';
+    return 'mais de 1h de fila';
+  }
+
   function bairroReal(p) {
     const outro = (p['Outro bairro. Qual?'] || '').trim();
     const b = (p['Bairro'] || '').trim();
@@ -624,6 +646,7 @@
         const nReports  = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), status);
         const rClass    = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
         const rLabel    = nReports >= 2 ? `${nReports} reports confirmam` : nReports === 1 ? '1 report' : '';
+        const tempoFila = status === 'amarelo' ? calcularTempoMedio(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p)) : null;
         const tsData    = parseData(p['Carimbo de data/hora']);
         const antigo    = tsData && (Date.now() - tsData) > umaHora;
         const fActualizar = fraseAleatoria(frasesActualizar);
@@ -639,6 +662,7 @@
                   ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
                   ${hora ? `<div class="bomba-hora">${hora}${antigo ? ' <span style="color:#c0392b;font-style:normal">· pode estar desatualizado</span>' : ''}</div>` : ''}
                   ${rLabel ? `<div class="report-count ${rClass}">${rLabel}</div>` : ''}
+                  ${tempoFila ? `<div class="tempo-fila">⏱ ${tempoFila}</div>` : ''}
                 </div>
               </div>
               <div class="badge badge-${status}">${badgeLabel(status)}</div>
