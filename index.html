@@ -46,6 +46,48 @@
       display: none;
     }
     .banner-urgencia.visivel { display: block; }
+    .banner-colab {
+      background: #e8f5e9;
+      border-bottom: 1px solid #c8e6c9;
+      padding: 7px 16px;
+      font-size: 12px;
+      color: #2d7a3a;
+      text-align: center;
+      line-height: 1.4;
+    }
+    .alerta-transito {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #b07d00;
+      display: none;
+    }
+    .alerta-transito.visivel { display: block; }
+    .countdown-bar {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      padding: 5px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #aaa;
+    }
+    .countdown-progress {
+      flex: 1;
+      height: 2px;
+      background: #f0f0ec;
+      border-radius: 2px;
+      margin: 0 10px;
+      overflow: hidden;
+    }
+    .countdown-fill {
+      height: 100%;
+      background: #2d7a3a;
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
     .stats-row {
       display: grid;
       grid-template-columns: repeat(3, 1fr);
@@ -85,7 +127,6 @@
       background: #f9f9f9;
       color: #1a1a18;
     }
-
     .filtros {
       display: flex;
       gap: 5px;
@@ -111,8 +152,8 @@
     .fbtn.on-verm     { background: #c0392b; color: #fff; border-color: #c0392b; }
     .fbtn.on-gasolina { background: #185fa5; color: #fff; border-color: #185fa5; }
     .fbtn.on-gasoleo  { background: #5a3e9e; color: #fff; border-color: #5a3e9e; }
-    .filtros-sep { width: 1px; background: #e8e8e4; margin: 2px; align-self: stretch; }
     .fbtn.on-recentes { background: #0f6e56; color: #fff; border-color: #0f6e56; }
+    .filtros-sep { width: 1px; background: #e8e8e4; margin: 2px; align-self: stretch; }
     .lista { padding: 0 16px 16px; }
     .bairro-bloco { margin-bottom: 4px; }
     .bairro-header {
@@ -128,10 +169,15 @@
       text-transform: uppercase;
       letter-spacing: 0.07em;
     }
-    .bairro-frescura { font-size: 10px; color: #ccc; }
-    .bairro-frescura.fresco { color: #2d7a3a; }
-    .bairro-frescura.medio  { color: #b07d00; }
-    .bairro-frescura.antigo { color: #c0392b; }
+    .nota-desatualizada {
+      background: #fff8e1;
+      border-left: 3px solid #b07d00;
+      padding: 7px 12px;
+      font-size: 11px;
+      color: #b07d00;
+      margin: 8px 0 4px;
+      border-radius: 0 6px 6px 0;
+    }
     .bomba-card {
       background: #fff;
       border: 1px solid #e8e8e4;
@@ -165,10 +211,14 @@
     .badge-amarelo  { background: #fff8e1; color: #b07d00; }
     .badge-vermelho { background: #fdecea; color: #c0392b; }
     .badge-cinza    { background: #f0f0f0; color: #888; }
+    .report-count { font-size: 10px; color: #aaa; margin-top: 2px; font-weight: 500; }
+    .report-count.alto  { color: #2d7a3a; }
+    .report-count.medio { color: #b07d00; }
     .bomba-card-footer {
       display: flex;
       align-items: center;
       justify-content: space-between;
+      gap: 6px;
       margin-top: 8px;
       padding-top: 7px;
       border-top: 1px solid #f0f0ec;
@@ -182,56 +232,10 @@
       color: #888;
       cursor: pointer;
       transition: all 0.15s;
+      flex: 1;
     }
     .confirmar-btn:hover { border-color: #2d7a3a; color: #2d7a3a; }
     .confirmar-btn.confirmado { border-color: #2d7a3a; color: #2d7a3a; background: #e8f5e9; }
-    .confirmar-count { font-size: 10px; color: #bbb; }
-    .vazio { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
-    .loading { text-align: center; padding: 48px 20px; color: #888; font-size: 14px; }
-    .erro { margin: 16px; padding: 12px 16px; background: #fdecea; border-radius: 8px; font-size: 13px; color: #c0392b; }
-    .acoes-wrap {
-      padding: 12px 16px 0;
-      border-top: 1px solid #e8e8e4;
-      margin-top: 4px;
-      display: flex;
-      flex-direction: column;
-      gap: 8px;
-    }
-    .report-link {
-      display: block;
-      padding: 11px 16px;
-      background: #1a1a18;
-      color: #f5f5f0;
-      text-align: center;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      text-decoration: none;
-    }
-    .report-link:hover { background: #333; }
-    .partilhar-btn {
-      display: block;
-      padding: 10px 16px;
-      background: #25d366;
-      color: #fff;
-      text-align: center;
-      border-radius: 10px;
-      font-size: 13px;
-      font-weight: 600;
-      border: none;
-      cursor: pointer;
-      width: 100%;
-    }
-    .partilhar-btn:hover { background: #1da851; }
-    .report-label { font-size: 11px; color: #aaa; text-align: center; padding-bottom: 20px; }
-    .report-count {
-      font-size: 10px;
-      color: #aaa;
-      margin-top: 2px;
-      font-weight: 500;
-    }
-    .report-count.alto { color: #2d7a3a; }
-    .report-count.medio { color: #b07d00; }
     .actualizar-btn {
       background: none;
       border: 1px solid #e0e0da;
@@ -243,44 +247,13 @@
       transition: all 0.15s;
       text-decoration: none;
       display: inline-block;
+      flex: 1;
+      text-align: center;
     }
     .actualizar-btn:hover { border-color: #185fa5; background: #e3eef9; }
-    .nota-desatualizada {
-      background: #fff8e1;
-      border-left: 3px solid #b07d00;
-      padding: 7px 12px;
-      font-size: 11px;
-      color: #b07d00;
-      margin: 8px 0 4px;
-      border-radius: 0 6px 6px 0;
-    }
-    .bairro-raw {
-      font-size: 9px;
-      color: #ccc;
-      text-transform: none;
-      font-weight: 400;
-      letter-spacing: 0;
-      margin-left: 4px;
-    }
-
-    .banner-colab {
-      background: #e8f5e9;
-      border-bottom: 1px solid #c8e6c9;
-      padding: 7px 16px;
-      font-size: 12px;
-      color: #2d7a3a;
-      text-align: center;
-      line-height: 1.4;
-    }
-    .alerta-transito {
-      background: #fff8e1;
-      border-bottom: 1px solid #ffe082;
-      padding: 8px 16px;
-      font-size: 12px;
-      color: #b07d00;
-      display: none;
-    }
-    .alerta-transito.visivel { display: block; }
+    .vazio { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+    .loading { text-align: center; padding: 48px 20px; color: #888; font-size: 14px; }
+    .erro { margin: 16px; padding: 12px 16px; background: #fdecea; border-radius: 8px; font-size: 13px; color: #c0392b; }
     .fab {
       position: fixed;
       bottom: 20px;
@@ -302,30 +275,6 @@
     }
     .fab:hover { background: #333; }
     .fab-spacer { height: 72px; }
-    .countdown-bar {
-      background: #fff;
-      border-bottom: 1px solid #e8e8e4;
-      padding: 5px 16px;
-      display: flex;
-      align-items: center;
-      justify-content: space-between;
-      font-size: 11px;
-      color: #aaa;
-    }
-    .countdown-progress {
-      flex: 1;
-      height: 2px;
-      background: #f0f0ec;
-      border-radius: 2px;
-      margin: 0 10px;
-      overflow: hidden;
-    }
-    .countdown-fill {
-      height: 100%;
-      background: #2d7a3a;
-      border-radius: 2px;
-      transition: width 1s linear;
-    }
   </style>
 </head>
 <body>
@@ -344,7 +293,7 @@
 <div class="countdown-bar">
   <span id="countdown-label">próxima atualização</span>
   <div class="countdown-progress"><div class="countdown-fill" id="countdown-fill" style="width:100%"></div></div>
-  <span id="countdown-num">10:00</span>
+  <span id="countdown-num">2:00</span>
 </div>
 
 <div class="stats-row">
@@ -390,6 +339,7 @@
 
 <script>
   const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?gid=1155091876&single=true&output=csv';
+  const FORM_URL  = 'https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform';
   const REFRESH_MS = 2 * 60 * 1000;
 
   let todosOsDados = [];
@@ -399,6 +349,25 @@
   let filtroRecentes = false;
   let zonaActiva = localStorage.getItem('minhaZona') || '';
   let confirmacoes = JSON.parse(localStorage.getItem('confirmacoes') || '{}');
+
+  const frasesConfirmar = [
+    'Xi, continua igual!',
+    'Epa, ainda assim!',
+    'Confirmado, mano',
+    'Yah, é isso mesmo',
+    'Nada mudou, irmão',
+  ];
+  const frasesActualizar = [
+    'Já melhorou? Conta aí!',
+    'Situação mudou? Reporta!',
+    'Ficou pior? Avisa!',
+    'Update, please!',
+    'Novidades? Reporta!',
+  ];
+
+  function fraseAleatoria(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
 
   function normalizarStatus(raw) {
     if (!raw) return 'cinza';
@@ -516,15 +485,6 @@
     return b;
   }
 
-  function notaDesatualizada(dados) {
-    const umaHora = 60 * 60 * 1000;
-    const antigas = dados.filter(p => {
-      const ts = parseData(p['Carimbo de data/hora']);
-      return !ts || (Date.now() - ts) > umaHora;
-    });
-    return antigas.length;
-  }
-
   function agruparPorBairro(lista) {
     const grupos = {};
     lista.forEach(p => {
@@ -533,16 +493,6 @@
       grupos[b].push(p);
     });
     return grupos;
-  }
-
-  function frescuraLabel(tsStr) {
-    if (!tsStr) return { label: '', classe: '' };
-    const d = parseData(tsStr); if (!d) return { label: '', classe: '' };
-    const diff = Math.floor((Date.now() - d) / 60000);
-    if (diff < 30)  return { label: 'report recente', classe: 'fresco' };
-    if (diff < 120) return { label: `report há ${diff} min`, classe: 'medio' };
-    const h = Math.floor(diff / 60);
-    return { label: `report há ${h}h — pode estar desatualizado`, classe: 'antigo' };
   }
 
   function atualizarAlertaTransito(todosRaw) {
@@ -563,7 +513,7 @@
       .map(([b]) => b);
     const el = document.getElementById('alerta-transito');
     if (criticos.length) {
-      el.textContent = '⚠ Trânsito provável em: ' + criticos.slice(0,4).join(', ') + ' — várias bombas com fila na última meia hora.';
+      el.textContent = '⚠ Trânsito provável em: ' + criticos.slice(0,4).join(', ') + ' — várias bombas com fila na última hora.';
       el.classList.add('visivel');
     } else {
       el.classList.remove('visivel');
@@ -591,7 +541,7 @@
     bairros.sort().forEach(b => {
       const opt = document.createElement('option');
       opt.value = b;
-      opt.textContent = b;
+      opt.textContent = bairroExibicao(b);
       if (b === zonaActiva) opt.selected = true;
       sel.appendChild(opt);
     });
@@ -604,33 +554,12 @@
     renderizar();
   }
 
-
-
-  const frasesConfirmar = [
-    '✓ Xi, continua igual!',
-    '✓ Epa, ainda assim!',
-    '✓ Confirmado, mano',
-    '✓ Yah, é isso mesmo',
-    '✓ Nada mudou, irmão',
-  ];
-  const frasesActualizar = [
-    'Já melhorou? Conta aí!',
-    'Situação mudou? Reporta!',
-    'Ficou pior? Avisa!',
-    'Update, please!',
-    'Novidades? Reporta!',
-  ];
-
-  function fraseAleatoria(arr) {
-    return arr[Math.floor(Math.random() * arr.length)];
-  }
-
   function confirmar(chave, btn) {
     if (confirmacoes[chave]) return;
     confirmacoes[chave] = true;
     localStorage.setItem('confirmacoes', JSON.stringify(confirmacoes));
     btn.classList.add('confirmado');
-    btn.textContent = fraseAleatoria(frasesConfirmar);
+    btn.textContent = '✓ ' + fraseAleatoria(frasesConfirmar);
   }
 
   function renderizar() {
@@ -661,28 +590,43 @@
       return;
     }
 
-    let html = '';
+    const umaHora = 60 * 60 * 1000;
+    const nAntigas = filtrados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return !ts || (Date.now() - ts) > umaHora;
+    }).length;
+
+    const notaHtml = nAntigas > 0 && !filtroRecentes
+      ? `<div class="nota-desatualizada">⚠ ${nAntigas} bomba${nAntigas > 1 ? 's' : ''} sem report na última hora — info pode estar velha. Activa "+ Recentes" para ver só o que é fresco.</div>`
+      : '';
+
+    let html = notaHtml;
     bairros.forEach(bairro => {
       const bombas = grupos[bairro];
+      const nomeBairro = bairroExibicao(bairro);
+
       html += `<div class="bairro-bloco">
         <div class="bairro-header">
-          <div class="bairro-titulo">${bairro}</div>
+          <div class="bairro-titulo">${nomeBairro}</div>
         </div>`;
 
       bombas.sort((a,b) => (parseData(b['Carimbo de data/hora'])||0) - (parseData(a['Carimbo de data/hora'])||0));
       bombas.forEach(p => {
-        const status = normalizarStatus(p['Status']);
-        const ref    = (p['Referências sobre a bomba'] || '').trim();
-        const obs    = (p['Observações'] || '').trim();
-        const hora   = tempoRelativo(p['Carimbo de data/hora']);
-        const detalhe = ref || obs;
-        const tipos  = parseCombustivel(p['Que tipo de combustível está disponível?']);
-        const chave  = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
-        const jaConfirmou = !!confirmacoes[chave];
-        const nReports = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), normalizarStatus(p['Status']));
-        const reportClass = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
-        const reportLabel = nReports >= 2 ? `${nReports} reports confirmam` : nReports === 1 ? '1 report' : '';
-        const frescura = frescuraLabel(p['Carimbo de data/hora']);
+        const status    = normalizarStatus(p['Status']);
+        const ref       = (p['Referências sobre a bomba'] || '').trim();
+        const obs       = (p['Observações'] || '').trim();
+        const hora      = tempoRelativo(p['Carimbo de data/hora']);
+        const detalhe   = ref || obs;
+        const tipos     = parseCombustivel(p['Que tipo de combustível está disponível?']);
+        const chave     = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
+        const chaveEsc  = chave.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const jaConf    = !!confirmacoes[chave];
+        const nReports  = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), status);
+        const rClass    = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
+        const rLabel    = nReports >= 2 ? `${nReports} reports confirmam` : nReports === 1 ? '1 report' : '';
+        const tsData    = parseData(p['Carimbo de data/hora']);
+        const antigo    = tsData && (Date.now() - tsData) > umaHora;
+        const fActualizar = fraseAleatoria(frasesActualizar);
 
         html += `
           <div class="bomba-card">
@@ -693,18 +637,18 @@
                   <div class="bomba-nome">${p['Nome da bomba de combustível']}</div>
                   ${tipos.length ? `<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>` : ''}
                   ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
-                  ${hora ? `<div class="bomba-hora">${hora}${frescura.classe === 'antigo' ? ` <span style="color:#c0392b;font-style:normal">· pode estar desatualizado</span>` : ''}</div>` : ''}
-                  ${reportLabel ? `<div class="report-count ${reportClass}">${reportLabel}</div>` : ''}
+                  ${hora ? `<div class="bomba-hora">${hora}${antigo ? ' <span style="color:#c0392b;font-style:normal">· pode estar desatualizado</span>' : ''}</div>` : ''}
+                  ${rLabel ? `<div class="report-count ${rClass}">${rLabel}</div>` : ''}
                 </div>
               </div>
               <div class="badge badge-${status}">${badgeLabel(status)}</div>
             </div>
             <div class="bomba-card-footer">
-              <button class="confirmar-btn ${jaConfirmou ? 'confirmado' : ''}"
-                onclick="confirmar('${chave.replace(/'/g,"\\'")}', this)">
-                ${jaConfirmou ? '✓ Confirmado' : '✓ Confirmar'}
+              <button class="confirmar-btn ${jaConf ? 'confirmado' : ''}"
+                onclick="confirmar('${chaveEsc}', this)">
+                ${jaConf ? '✓ ' + fraseAleatoria(frasesConfirmar) : '✓ Ainda é assim'}
               </button>
-              <span class="confirmar-count"></span>
+              <a class="actualizar-btn" href="${FORM_URL}" target="_blank">${fActualizar}</a>
             </div>
           </div>`;
       });
@@ -750,7 +694,7 @@
     Object.keys(grupos).sort().forEach(bairro => {
       const disponiveis = grupos[bairro].filter(p => normalizarStatus(p['Status']) !== 'vermelho');
       if (disponiveis.length) {
-        linhas.push(`\n*${bairro}*`);
+        linhas.push(`\n*${bairroExibicao(bairro)}*`);
         disponiveis.forEach(p => {
           const s = normalizarStatus(p['Status']);
           const emoji = s === 'verde' ? '✅' : '⏳';
@@ -816,14 +760,10 @@
       const restante = Math.max(0, nextRefresh - Date.now());
       const mins = Math.floor(restante / 60000);
       const secs = Math.floor((restante % 60000) / 1000);
-      const pct = Math.round((restante / REFRESH_MS) * 100);
-      document.getElementById('countdown-num').textContent =
-        mins + ':' + String(secs).padStart(2,'0');
+      const pct  = Math.round((restante / REFRESH_MS) * 100);
+      document.getElementById('countdown-num').textContent = mins + ':' + String(secs).padStart(2,'0');
       document.getElementById('countdown-fill').style.width = pct + '%';
-      if (restante === 0) {
-        carregarDados();
-        iniciarCountdown();
-      }
+      if (restante === 0) { carregarDados(); iniciarCountdown(); }
     }, 1000);
   }
 
