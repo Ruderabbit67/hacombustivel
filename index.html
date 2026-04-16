@@ -467,60 +467,58 @@
   }
 
   function gerarResumo(dados) {
-    const grupos = agruparPorBairro(dados);
-    const bairros = Object.keys(grupos).sort();
-    const linhasWA = ['*Há Combustível — Maputo* (situação agora)'];
+    const linhasWA = ['*Ha Combustivel - Maputo* (situacao agora)'];
 
-    const bDisp = [], bFila = [], bEsgo = [];
-    bairros.forEach(b => {
-      const bombas = grupos[b];
-      const nDisp = bombas.filter(p => normalizarStatus(p['Status']) === 'verde').length;
-      const nFila = bombas.filter(p => normalizarStatus(p['Status']) === 'amarelo').length;
-      const nEsgo = bombas.filter(p => normalizarStatus(p['Status']) === 'vermelho').length;
-      const dispBombas = bombas.filter(p => normalizarStatus(p['Status']) !== 'vermelho');
-      const comb = infoCombu(dispBombas);
-      const when = frescuraBairro(bombas);
-      if (nEsgo === bombas.length) bEsgo.push({b, when});
-      else if (nFila > 0 && nDisp === 0) bFila.push({b, comb, when});
-      else if (nDisp > 0) bDisp.push({b, comb, when});
-    });
+    const dispSemFila = dados.filter(p => normalizarStatus(p['Status']) === 'verde');
+    const dispComFila = dados.filter(p => normalizarStatus(p['Status']) === 'amarelo');
+    const esgotadas   = dados.filter(p => normalizarStatus(p['Status']) === 'vermelho');
 
     const hora = new Date().toLocaleTimeString('pt-MZ', {hour:'2-digit', minute:'2-digit'});
-    let txt = `<div class="resumo-titulo">Situação às ${hora}</div>`;
+    let txt = `<div class="resumo-titulo">Situacao as ${hora}</div>`;
 
-    if (bDisp.length) {
-      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">✅ Sem fila</span><br>`;
-      bDisp.slice(0,5).forEach(({b, comb, when}) => {
+    function linhasBomba(lista, emoji, emojiWA) {
+      let h = '';
+      lista.slice(0, 6).forEach(p => {
+        const nome  = p['Nome da bomba de combustivel'] || p['Nome da bomba de combustível'] || '?';
+        const bairro = bairroExibicao(bairroReal(p));
+        const comb  = infoCombu([p]);
+        const when  = frescuraBairro([p]);
         const combTxt = comb ? ` (${comb})` : '';
-        txt += `<span class="resumo-zona-txt"><b>${bairroExibicao(b)}</b>${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
-        linhasWA.push(`✅ ${bairroExibicao(b)}${combTxt} (${when})`);
+        h += `<span class="resumo-zona-txt"><b>${nome}</b> — ${bairro}${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
+        linhasWA.push(`${emojiWA} ${nome} - ${bairro}${combTxt} (${when})`);
       });
+      return h;
+    }
+
+    if (dispSemFila.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">Sem fila</span><br>`;
+      txt += linhasBomba(dispSemFila, '✅', '[OK]');
+      txt += `</div>`;
+      if (dispSemFila.length > 0) linhasWA.splice(1, 0, '');
+    }
+
+    if (dispComFila.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">Com fila mas tem</span><br>`;
+      txt += linhasBomba(dispComFila, '⏳', '[FILA]');
       txt += `</div>`;
     }
 
-    if (bFila.length) {
-      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">⏳ Com fila mas tem</span><br>`;
-      bFila.slice(0,5).forEach(({b, comb, when}) => {
-        const combTxt = comb ? ` (${comb})` : '';
-        txt += `<span class="resumo-zona-txt"><b>${bairroExibicao(b)}</b>${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
-        linhasWA.push(`⏳ ${bairroExibicao(b)}${combTxt} (${when})`);
-      });
-      txt += `</div>`;
-    }
-
-    if (bEsgo.length) {
-      const nomes = bEsgo.slice(0,5).map(({b}) => bairroExibicao(b)).join(', ');
+    if (esgotadas.length) {
+      const nomes = esgotadas.slice(0, 5).map(p => {
+        const nome = p['Nome da bomba de combustivel'] || p['Nome da bomba de combustível'] || '?';
+        return `${nome} (${bairroExibicao(bairroReal(p))})`;
+      }).join(', ');
       const frases = [
-        `Nada em ${nomes} — esgotado. Não percas tempo.`,
-        `${nomes} tá seco. Passa para outro lado.`,
-        `Evita ${nomes} — sem combustível reportado.`,
+        `Nada em: ${nomes}. Nao percas tempo.`,
+        `Esgotado em: ${nomes}. Passa para outro lado.`,
       ];
-      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">❌ Esgotado</span><br><span class="resumo-zona-txt">${frases[Math.floor(Math.random()*frases.length)]}</span></div>`;
-      linhasWA.push(`❌ Esgotado: ${nomes}`);
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">Esgotado</span><br><span class="resumo-zona-txt" style="color:#c0392b">${frases[0]}</span></div>`;
+      linhasWA.push(`[SEM] Esgotado: ${esgotadas.slice(0,5).map(p => bairroExibicao(bairroReal(p))).join(', ')}`);
     }
 
-    linhasWA.push('\nVer tudo em tempo real 👉 https://nowledge-mz.github.io/hacombustivel');
-    linhasWA.push('Um projecto Nowledge 🇲🇿');
+    linhasWA.push('');
+    linhasWA.push('Ver tudo em tempo real: https://nowledge-mz.github.io/hacombustivel');
+    linhasWA.push('Um projecto Nowledge');
     return { html: txt, wa: linhasWA.join('\n') };
   }
 
@@ -533,12 +531,15 @@
     const { html, wa } = gerarResumo(recentes.length > 0 ? recentes : dados);
     document.getElementById('painel-resumo').innerHTML = `
       <div class="resumo-box">${html}</div>
-      <button class="partilhar-resumo" onclick="partilharResumoWA('${encodeURIComponent(wa)}')">Partilhar no WhatsApp</button>
+      <button class="partilhar-resumo" id="btn-partilhar-wa">Partilhar situacao no WhatsApp</button>
     `;
+    document.getElementById('btn-partilhar-wa').addEventListener('click', function() {
+      partilharResumoWA(wa);
+    });
   }
 
-  function partilharResumoWA(textoEnc) {
-    window.open('https://wa.me/?text=' + textoEnc, '_blank');
+  function partilharResumoWA(texto) {
+    window.open('https://wa.me/?text=' + encodeURIComponent(texto), '_blank');
   }
 
   const frasesConfirmar = [
