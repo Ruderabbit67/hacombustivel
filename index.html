@@ -976,6 +976,7 @@
       popularSelectZona(bairros);
       atualizarAlertaTransito(todosOsDados);
       renderizar();
+      if (modoActivo === 'resumo') renderizarResumo();
     } catch (e) {
       const msg = e.name === 'AbortError' ? 'ligação lenta — tenta atualizar' : 'erro ao carregar';
       document.getElementById('header-sub').textContent = msg;
