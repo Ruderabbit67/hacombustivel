@@ -598,9 +598,9 @@
   function normalizarStatus(raw) {
     if (!raw) return 'cinza';
     const r = raw.toLowerCase();
-    if (r.includes('sem fila') || (r.includes('disponível') && !r.includes('fila'))) return 'verde';
-    if (r.includes('fila') || r.includes('com fila')) return 'amarelo';
-    if (r.includes('esgotado')) return 'vermelho';
+    if (r.includes('sem fila') || r.includes('no queue')) return 'verde';
+    if (r.includes('com fila') || r.includes('with queue')) return 'amarelo';
+    if (r.includes('esgotado') || r.includes('out of fuel') || r.includes('empty')) return 'vermelho';
     return 'cinza';
   }
   const badgeLabel = (s) => ({ verde: t('badgeVerde'), amarelo: t('badgeAmarelo'), vermelho: t('badgeVermelho'), cinza: '?' })[s] || '?';
@@ -657,13 +657,13 @@
       const campos = parseLinha(l), obj = {};
       cab.forEach((k,i) => obj[k] = (campos[i]||'').replace(/^[\s"']+|[\s"']+$/g,''));
       return obj;
-    }).filter(r => r['Nome da bomba de combustível']);
+    }).filter(r => r['Nome da bomba de combustível / Fuel station name']);
   }
 
   function maisRecentePorBomba(lista) {
     const mapa = {};
     lista.forEach(p => {
-      const chave = (p['Nome da bomba de combustível']+'||'+(p['Bairro']||'')).toLowerCase().trim();
+      const chave = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood  ']||'')).toLowerCase().trim();
       const ts = parseData(p['Carimbo de data/hora']);
       if (!mapa[chave] || (ts && ts > (parseData(mapa[chave]['Carimbo de data/hora'])||0))) mapa[chave] = p;
     });
@@ -671,8 +671,8 @@
   }
 
   function bairroReal(p) {
-    const outro = (p['Outro bairro. Qual?']||'').trim();
-    return outro || (p['Bairro']||'').trim() || 'Outros';
+    const outro = (p['Outro bairro. Qual? /  Other neighbourhood. Which one? ']||'').trim();
+    return outro || (p['Bairro / Neighbourhood  ']||'').trim() || 'Outros';
   }
 
   function bairroExibicao(b) {
@@ -689,12 +689,12 @@
 
   function calcularTempoMedio(nomeBomba, bairro) {
     const agora = Date.now(), limite = 2*60*60*1000;
-    const CAMPO = 'Quanto tempo esperaste na fila?';
+    const CAMPO = 'Quanto tempo esperaste na fila? /  How long did you wait in the queue?';
     const mapa = {'Menos de 15 min':8,'15 a 30 min':22,'30 min a 1 hora':45,'Mais de 1 hora':75};
     const vals = todosOsDados.filter(p => {
       const ts = parseData(p['Carimbo de data/hora']);
       return ts && (agora-ts)<=limite
-        && (p['Nome da bomba de combustível']||'').toLowerCase().trim()===nomeBomba.toLowerCase().trim()
+        && (p['Nome da bomba de combustível / Fuel station name']||'').toLowerCase().trim()===nomeBomba.toLowerCase().trim()
         && bairroReal(p)===bairro && p[CAMPO] && mapa[p[CAMPO]];
     }).map(p => mapa[p[CAMPO]]);
     if (!vals.length) return null;
@@ -707,7 +707,7 @@
     return todosOsDados.filter(p => {
       const ts = parseData(p['Carimbo de data/hora']);
       return ts && (agora-ts)<=limite
-        && (p['Nome da bomba de combustível']||'').toLowerCase().trim()===nomeBomba.toLowerCase().trim()
+        && (p['Nome da bomba de combustível / Fuel station name']||'').toLowerCase().trim()===nomeBomba.toLowerCase().trim()
         && bairroReal(p)===bairro && normalizarStatus(p['Status'])===status;
     }).length;
   }
@@ -742,8 +742,8 @@
       const status  = normalizarStatus(p['Status']);
       const bairro  = bairroExibicao(bairroReal(p));
       const hora    = tempoRelativo(p['Carimbo de data/hora']);
-      const tempoF  = status === 'amarelo' ? calcularTempoMedio(p['Nome da bomba de combustível'], bairroReal(p)) : null;
-      const tipos   = parseCombustivel(p['Que tipo de combustível está disponível?']);
+      const tempoF  = status === 'amarelo' ? calcularTempoMedio(p['Nome da bomba de combustível / Fuel station name'], bairroReal(p)) : null;
+      const tipos   = parseCombustivel(p['Que tipo de combustível está disponível? /  What type of fuel is available?']);
       const combStr = tipos.includes('ambos') ? (lingua==='pt'?'gas+diesel':'petrol+diesel') : tipos.includes('gasolina') ? (lingua==='pt'?'gasolina':'petrol') : tipos.includes('gasoleo') ? (lingua==='pt'?'gasóleo':'diesel') : '';
       const icone   = status === 'verde' ? '⛽' : '⏳';
       const statusLabel = status === 'verde' ? t('semFilaLabel') : (tempoF || t('comFilaLabel'));
@@ -751,7 +751,7 @@
       return `<div class="top-pick-item">
         <div class="tp-icon ${status}">${icone}</div>
         <div class="tp-info">
-          <div class="tp-nome">${p['Nome da bomba de combustível']}</div>
+          <div class="tp-nome">${p['Nome da bomba de combustível / Fuel station name']}</div>
           <div class="tp-bairro">${bairro}${combStr ? ' · ' + combStr : ''} · ${hora}</div>
         </div>
         <div class="tp-right">
@@ -838,7 +838,7 @@
     if (zonaActiva) filtrados = filtrados.filter(p => bairroReal(p)===zonaActiva);
     if (filtroStatus!=='todos') filtrados = filtrados.filter(p => normalizarStatus(p['Status'])===filtroStatus);
     if (filtroComb!=='todos') filtrados = filtrados.filter(p => {
-      const tipos = parseCombustivel(p['Que tipo de combustível está disponível?']);
+      const tipos = parseCombustivel(p['Que tipo de combustível está disponível? /  What type of fuel is available?']);
       return tipos.includes(filtroComb)||tipos.includes('ambos');
     });
     if (filtroRecentes) {
@@ -862,18 +862,18 @@
       bombas.sort((a,b)=>(parseData(b['Carimbo de data/hora'])||0)-(parseData(a['Carimbo de data/hora'])||0));
       bombas.forEach(p => {
         const status  = normalizarStatus(p['Status']);
-        const ref     = (p['Referências sobre a bomba']||'').trim();
-        const obs     = (p['Observações']||'').trim();
+        const ref     = (p['Referências sobre a bomba / \nLandmark']||'').trim();
+        const obs     = (p['Observações /  Any additional notes ']||'').trim();
         const hora    = tempoRelativo(p['Carimbo de data/hora']);
         const detalhe = ref||obs;
-        const tipos   = parseCombustivel(p['Que tipo de combustível está disponível?']);
-        const chave   = (p['Nome da bomba de combustível']+'||'+(p['Bairro']||'')).toLowerCase().trim();
+        const tipos   = parseCombustivel(p['Que tipo de combustível está disponível? /  What type of fuel is available?']);
+        const chave   = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood  ']||'')).toLowerCase().trim();
         const chaveE  = chave.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
         const jaConf  = !!confirmacoes[chave];
-        const nRep    = contarReports(p['Nome da bomba de combustível'], bairroReal(p), status);
+        const nRep    = contarReports(p['Nome da bomba de combustível / Fuel station name'], bairroReal(p), status);
         const rClass  = nRep>=5?'alto':nRep>=2?'medio':'';
         const rLabel  = nRep>=2?(lingua==='pt'?`${nRep} reports confirmam`:`${nRep} reports confirm`):nRep===1?'1 report':'';
-        const tempoF  = status==='amarelo' ? calcularTempoMedio(p['Nome da bomba de combustível'], bairroReal(p)) : null;
+        const tempoF  = status==='amarelo' ? calcularTempoMedio(p['Nome da bomba de combustível / Fuel station name'], bairroReal(p)) : null;
         const tsData  = parseData(p['Carimbo de data/hora']);
         const antigo  = tsData&&(Date.now()-tsData)>umaHora;
         const fAtual  = fraseAtu(status);
@@ -885,7 +885,7 @@
             <div class="bomba-esq">
               <div class="dot dot-${status}"></div>
               <div class="bomba-info">
-                <div class="bomba-nome">${p['Nome da bomba de combustível']}</div>
+                <div class="bomba-nome">${p['Nome da bomba de combustível / Fuel station name']}</div>
                 ${tipos.length?`<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>`:''}
                 ${detalhe?`<div class="bomba-obs">${detalhe}</div>`:''}
                 ${hora?`<div class="bomba-hora">${hora}${antigo?` <span style="color:#ff6b6b;font-style:normal">${antigoTxt}</span>`:''}</div>`:''}
@@ -926,8 +926,8 @@
     const linhasB = (lista, emoji) => {
       let h='';
       lista.slice(0,6).forEach(p=>{
-        const nome=p['Nome da bomba de combustível']||'?', b=bairroExibicao(bairroReal(p));
-        const tipos=parseCombustivel(p['Que tipo de combustível está disponível?']);
+        const nome=p['Nome da bomba de combustível / Fuel station name']||'?', b=bairroExibicao(bairroReal(p));
+        const tipos=parseCombustivel(p['Que tipo de combustível está disponível? /  What type of fuel is available?']);
         const comb=tipos.includes('ambos')?(lingua==='pt'?'gas+diesel':'petrol+diesel'):tipos.includes('gasolina')?(lingua==='pt'?'gasolina':'petrol'):tipos.includes('gasoleo')?(lingua==='pt'?'gasóleo':'diesel'):'';
         const when=tempoRelativo(p['Carimbo de data/hora']);
         const combTxt=comb?` (${comb})`:'';
@@ -940,7 +940,7 @@
     if (dispSF.length) txt+=`<div class="resumo-zona"><span class="resumo-zona-nome">${t('semFila')}</span><br>${linhasB(dispSF,'[OK]')}</div>`;
     if (dispCF.length) txt+=`<div class="resumo-zona"><span class="resumo-zona-nome">${t('comFilaMas')}</span><br>${linhasB(dispCF,'[FILA]')}</div>`;
     if (esgo.length) {
-      const nomes=esgo.slice(0,5).map(p=>`${p['Nome da bomba de combustível']} (${bairroExibicao(bairroReal(p))})`).join(', ');
+      const nomes=esgo.slice(0,5).map(p=>`${p['Nome da bomba de combustível / Fuel station name']} (${bairroExibicao(bairroReal(p))})`).join(', ');
       const frase=lingua==='pt'?`Nada em: ${nomes}.`:`Empty: ${nomes}.`;
       txt+=`<div class="resumo-zona"><span class="resumo-zona-nome">${t('esgLbl')}</span><br><span class="resumo-zona-txt" style="color:#ff6b6b">${frase}</span></div>`;
       wa.push(`[SEM] ${esgo.slice(0,5).map(p=>bairroExibicao(bairroReal(p))).join(', ')}`);
