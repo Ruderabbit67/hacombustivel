@@ -1,0 +1,1231 @@
+<!DOCTYPE html>
+<html lang="pt">
+<head>
+  <meta charset="UTF-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Há Combustível — Maputo</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: #f5f5f0;
+      color: #1a1a18;
+      max-width: 640px;
+      margin: 0 auto;
+    }
+    .header {
+      background: #1a1a18;
+      color: #f5f5f0;
+      padding: 10px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      position: sticky;
+      top: 0;
+      z-index: 10;
+    }
+    .header-title { font-size: 15px; font-weight: 600; }
+    .header-sub { font-size: 11px; color: #888; margin-top: 2px; }
+    .header-right { display: flex; align-items: center; gap: 8px; }
+    .lang-toggle {
+      background: none;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 4px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      cursor: pointer;
+      letter-spacing: 0.05em;
+    }
+    .lang-toggle:hover { border-color: #888; color: #f5f5f0; }
+    .header-refresh {
+      background: none;
+      border: 1px solid #444;
+      color: #aaa;
+      padding: 5px 10px;
+      border-radius: 6px;
+      font-size: 12px;
+      cursor: pointer;
+      white-space: nowrap;
+    }
+    .header-refresh:hover { border-color: #888; color: #f5f5f0; }
+
+    /* MENSAGEM VIVA */
+    .mensagem-viva {
+      padding: 9px 16px;
+      font-size: 12px;
+      line-height: 1.45;
+      border-bottom: 1px solid #e8e8e4;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .mensagem-viva.positiva  { background: #e8f5e9; color: #2d7a3a; }
+    .mensagem-viva.alerta    { background: #fff8e1; color: #b07d00; }
+    .mensagem-viva.critica   { background: #fdecea; color: #c0392b; }
+    .mensagem-viva.neutra    { background: #f0f0ec; color: #666; }
+    .mv-icon { font-size: 16px; flex-shrink: 0; }
+
+    /* TEMPO MÉDIO */
+    .tempo-medio-bar {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      padding: 7px 16px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 12px;
+      color: #b07d00;
+    }
+    .tempo-medio-bar.escondido { display: none; }
+    .tm-icon { font-size: 15px; }
+    .tm-label { font-weight: 600; }
+    .tm-sub { font-size: 10px; color: #aaa; margin-left: auto; }
+
+    .banner-urgencia {
+      background: #c0392b;
+      color: #fff;
+      padding: 8px 16px;
+      font-size: 12px;
+      line-height: 1.5;
+      display: none;
+    }
+    .banner-urgencia.visivel { display: block; }
+    .alerta-transito {
+      background: #fff8e1;
+      border-bottom: 1px solid #ffe082;
+      padding: 8px 16px;
+      font-size: 12px;
+      color: #b07d00;
+      display: none;
+    }
+    .alerta-transito.visivel { display: block; }
+    .countdown-bar {
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      padding: 5px 16px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      font-size: 11px;
+      color: #aaa;
+    }
+    .countdown-progress {
+      flex: 1;
+      height: 2px;
+      background: #f0f0ec;
+      border-radius: 2px;
+      margin: 0 10px;
+      overflow: hidden;
+    }
+    .countdown-fill {
+      height: 100%;
+      background: #2d7a3a;
+      border-radius: 2px;
+      transition: width 1s linear;
+    }
+    .stats-row {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      padding: 10px 16px;
+      background: #eeeee9;
+      border-bottom: 1px solid #ddd;
+    }
+    .stat-card {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 8px;
+      padding: 8px 10px;
+      text-align: center;
+    }
+    .stat-num { font-size: 22px; font-weight: 600; }
+    .stat-label { font-size: 11px; color: #888; margin-top: 1px; }
+    .num-verde    { color: #2d7a3a; }
+    .num-amarelo  { color: #b07d00; }
+    .num-vermelho { color: #c0392b; }
+    .minha-zona-bar {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      font-size: 12px;
+    }
+    .zona-label { white-space: nowrap; font-weight: 600; color: #1a1a18; }
+    .minha-zona-bar select {
+      flex: 1;
+      font-size: 12px;
+      padding: 4px 8px;
+      border: 1px solid #ddd;
+      border-radius: 6px;
+      background: #f9f9f9;
+      color: #1a1a18;
+    }
+    .modo-tabs {
+      display: flex;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+    }
+    .modo-tab {
+      flex: 1;
+      padding: 9px 4px;
+      font-size: 12px;
+      font-weight: 600;
+      text-align: center;
+      cursor: pointer;
+      color: #aaa;
+      border-bottom: 2px solid transparent;
+    }
+    .modo-tab.on-lista  { color: #2d7a3a; border-bottom-color: #2d7a3a; }
+    .modo-tab.on-resumo { color: #185fa5; border-bottom-color: #185fa5; }
+    .filtros {
+      display: flex;
+      gap: 5px;
+      padding: 8px 16px;
+      background: #fff;
+      border-bottom: 1px solid #e8e8e4;
+      flex-wrap: wrap;
+    }
+    .fbtn {
+      padding: 4px 11px;
+      border-radius: 20px;
+      border: 1px solid #ddd;
+      background: #fff;
+      font-size: 12px;
+      cursor: pointer;
+      color: #666;
+      transition: all 0.15s;
+    }
+    .fbtn:hover { border-color: #aaa; }
+    .fbtn.on          { background: #1a1a18; color: #fff; border-color: #1a1a18; }
+    .fbtn.on-verde    { background: #2d7a3a; color: #fff; border-color: #2d7a3a; }
+    .fbtn.on-amarelo  { background: #b07d00; color: #fff; border-color: #b07d00; }
+    .fbtn.on-verm     { background: #c0392b; color: #fff; border-color: #c0392b; }
+    .fbtn.on-gasolina { background: #185fa5; color: #fff; border-color: #185fa5; }
+    .fbtn.on-gasoleo  { background: #5a3e9e; color: #fff; border-color: #5a3e9e; }
+    .fbtn.on-recentes { background: #0f6e56; color: #fff; border-color: #0f6e56; }
+    .filtros-sep { width: 1px; background: #e8e8e4; margin: 2px; align-self: stretch; }
+    .lista { padding: 0 16px 16px; }
+    .bairro-bloco { margin-bottom: 4px; }
+    .bairro-header {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 14px 0 5px;
+    }
+    .bairro-titulo {
+      font-size: 11px;
+      font-weight: 700;
+      color: #aaa;
+      text-transform: uppercase;
+      letter-spacing: 0.07em;
+    }
+    .nota-desatualizada {
+      background: #fff8e1;
+      border-left: 3px solid #b07d00;
+      padding: 7px 12px;
+      font-size: 11px;
+      color: #b07d00;
+      margin: 8px 0 4px;
+      border-radius: 0 6px 6px 0;
+    }
+    .bomba-card {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 10px 12px;
+      margin-bottom: 6px;
+    }
+    .bomba-card-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+    }
+    .bomba-esq { display: flex; align-items: flex-start; gap: 9px; flex: 1; min-width: 0; }
+    .dot { width: 9px; height: 9px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .dot-verde    { background: #2d7a3a; }
+    .dot-amarelo  { background: #b07d00; }
+    .dot-vermelho { background: #c0392b; }
+    .dot-cinza    { background: #aaa; }
+    .bomba-info { min-width: 0; flex: 1; }
+    .bomba-nome { font-size: 13px; font-weight: 600; color: #1a1a18; }
+    .bomba-combustivel { display: flex; gap: 4px; margin-top: 3px; flex-wrap: wrap; }
+    .pill-comb { font-size: 10px; font-weight: 600; padding: 2px 7px; border-radius: 10px; }
+    .pill-gasolina { background: #e3eef9; color: #185fa5; }
+    .pill-gasoleo  { background: #ede8f9; color: #5a3e9e; }
+    .pill-ambos    { background: #e8f5e9; color: #2d7a3a; }
+    .bomba-obs  { font-size: 11px; color: #666; margin-top: 3px; font-style: italic; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .bomba-hora { font-size: 10px; color: #bbb; margin-top: 2px; }
+    .badge { flex-shrink: 0; font-size: 11px; font-weight: 600; padding: 3px 9px; border-radius: 10px; white-space: nowrap; }
+    .badge-verde    { background: #e8f5e9; color: #2d7a3a; }
+    .badge-amarelo  { background: #fff8e1; color: #b07d00; }
+    .badge-vermelho { background: #fdecea; color: #c0392b; }
+    .badge-cinza    { background: #f0f0f0; color: #888; }
+    .report-count { font-size: 10px; color: #aaa; margin-top: 2px; font-weight: 500; }
+    .report-count.alto  { color: #2d7a3a; }
+    .report-count.medio { color: #b07d00; }
+    .tempo-fila { font-size: 10px; color: #b07d00; font-weight: 600; margin-top: 2px; }
+    .bomba-card-footer {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      margin-top: 8px;
+      padding-top: 7px;
+      border-top: 1px solid #f0f0ec;
+    }
+    .confirmar-btn {
+      background: none;
+      border: 1px solid #e0e0da;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #888;
+      cursor: pointer;
+      transition: all 0.15s;
+      flex: 1;
+    }
+    .confirmar-btn:hover { border-color: #2d7a3a; color: #2d7a3a; }
+    .confirmar-btn.confirmado { border-color: #2d7a3a; color: #2d7a3a; background: #e8f5e9; }
+    .actualizar-btn {
+      background: none;
+      border: 1px solid #e0e0da;
+      border-radius: 6px;
+      padding: 3px 10px;
+      font-size: 11px;
+      color: #185fa5;
+      cursor: pointer;
+      transition: all 0.15s;
+      text-decoration: none;
+      display: inline-block;
+      flex: 1;
+      text-align: center;
+    }
+    .actualizar-btn:hover { border-color: #185fa5; background: #e3eef9; }
+    .vazio { text-align: center; padding: 40px 20px; color: #aaa; font-size: 14px; }
+    .loading { text-align: center; padding: 48px 20px; color: #888; font-size: 14px; }
+    .erro { margin: 16px; padding: 12px 16px; background: #fdecea; border-radius: 8px; font-size: 13px; color: #c0392b; }
+    .toggle-historico {
+      font-size: 11px;
+      color: #185fa5;
+      text-align: center;
+      padding: 6px;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .resumo-box {
+      background: #fff;
+      border: 1px solid #e8e8e4;
+      border-radius: 10px;
+      padding: 14px 16px;
+      margin: 12px 0 8px;
+      font-size: 14px;
+      color: #1a1a18;
+      line-height: 1.7;
+    }
+    .resumo-titulo { font-size: 11px; font-weight: 700; color: #aaa; text-transform: uppercase; letter-spacing: 0.07em; margin-bottom: 8px; }
+    .resumo-zona { margin-bottom: 10px; }
+    .resumo-zona-nome { font-weight: 700; color: #1a1a18; }
+    .resumo-zona-txt { color: #444; font-size: 13px; }
+    .partilhar-resumo {
+      display: block;
+      margin: 12px 0 0;
+      padding: 12px;
+      background: #25d366;
+      color: #fff;
+      text-align: center;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      border: none;
+      cursor: pointer;
+      width: 100%;
+    }
+    .fab {
+      position: fixed;
+      bottom: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      background: #1a1a18;
+      color: #f5f5f0;
+      border: none;
+      border-radius: 28px;
+      padding: 14px 28px;
+      font-size: 14px;
+      font-weight: 600;
+      cursor: pointer;
+      z-index: 100;
+      white-space: nowrap;
+      box-shadow: 0 4px 16px rgba(0,0,0,0.25);
+      text-decoration: none;
+      display: inline-block;
+    }
+    .fab:hover { background: #333; }
+    .fab-spacer { height: 72px; }
+  </style>
+</head>
+<body>
+
+<div class="header">
+  <div>
+    <div class="header-title" id="page-title">Há Combustível — Maputo</div>
+    <div class="header-sub" id="header-sub">a carregar...</div>
+  </div>
+  <div class="header-right">
+    <button class="lang-toggle" onclick="toggleLang()" id="lang-btn">EN</button>
+    <button class="header-refresh" onclick="carregarDados()" id="btn-refresh">↻ Atualizar</button>
+  </div>
+</div>
+
+<div class="mensagem-viva neutra" id="mensagem-viva">
+  <span class="mv-icon">⏳</span>
+  <span id="mv-texto">A carregar situação...</span>
+</div>
+
+<div class="tempo-medio-bar escondido" id="tempo-medio-bar">
+  <span class="tm-icon">⏱</span>
+  <span class="tm-label" id="tm-label">Fila média: --</span>
+  <span class="tm-sub" id="tm-sub">última hora</span>
+</div>
+
+<div class="banner-urgencia" id="banner-urgencia"></div>
+<div class="alerta-transito" id="alerta-transito"></div>
+<div class="countdown-bar">
+  <span id="countdown-label">próxima atualização</span>
+  <div class="countdown-progress"><div class="countdown-fill" id="countdown-fill" style="width:100%"></div></div>
+  <span id="countdown-num">2:00</span>
+</div>
+
+<div class="stats-row">
+  <div class="stat-card">
+    <div class="stat-num num-verde" id="count-verde">—</div>
+    <div class="stat-label" id="lbl-disponivel">disponível</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num num-amarelo" id="count-amarelo">—</div>
+    <div class="stat-label" id="lbl-fila">com fila</div>
+  </div>
+  <div class="stat-card">
+    <div class="stat-num num-vermelho" id="count-vermelho">—</div>
+    <div class="stat-label" id="lbl-esgotado">esgotado</div>
+  </div>
+</div>
+
+<div class="minha-zona-bar">
+  <span class="zona-label" id="lbl-zona">A minha zona:</span>
+  <select id="zona-select" onchange="guardarZona(this.value)">
+    <option value="" id="opt-todas">Todas as zonas</option>
+  </select>
+</div>
+
+<div class="modo-tabs">
+  <div class="modo-tab on-lista" id="tab-lista" onclick="mudarModo('lista',this)" id="tab-lista-el">Lista de bombas</div>
+  <div class="modo-tab" id="tab-resumo" onclick="mudarModo('resumo',this)" id="tab-resumo-el">Situação agora</div>
+</div>
+
+<div id="painel-lista">
+  <div class="filtros">
+    <button class="fbtn on" id="f-todos"    onclick="filtrar('todos',this)">Todos</button>
+    <button class="fbtn"    id="f-verde"    onclick="filtrar('verde',this)" >Disponível</button>
+    <button class="fbtn"    id="f-amarelo"  onclick="filtrar('amarelo',this)">Com fila</button>
+    <button class="fbtn"    id="f-vermelho" onclick="filtrar('vermelho',this)">Esgotado</button>
+    <div class="filtros-sep"></div>
+    <button class="fbtn"    id="f-recentes" onclick="filtrarRecentes(this)">+ Recentes</button>
+    <div class="filtros-sep"></div>
+    <button class="fbtn"    id="f-gasolina" onclick="filtrarComb('gasolina',this)">Gasolina</button>
+    <button class="fbtn"    id="f-gasoleo"  onclick="filtrarComb('gasoleo',this)">Gasóleo</button>
+  </div>
+  <div class="lista" id="lista">
+    <div class="loading">A carregar bombas...</div>
+  </div>
+</div>
+
+<div id="painel-resumo" style="display:none;padding:0 16px 16px;"></div>
+
+<div class="fab-spacer"></div>
+<a class="fab" id="fab-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform" target="_blank">+ Reportar uma bomba</a>
+
+<script>
+  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?gid=1155091876&single=true&output=csv';
+  const FORM_URL  = 'https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform';
+  const REFRESH_MS = 2 * 60 * 1000;
+  const LIMITE_HORAS = 3;
+
+  let todosOsDados = [];
+  let dados = [];
+  let filtroStatus = 'todos';
+  let filtroComb = 'todos';
+  let filtroRecentes = false;
+  let zonaActiva = localStorage.getItem('minhaZona') || '';
+  let confirmacoes = JSON.parse(localStorage.getItem('confirmacoes') || '{}');
+  let modoActivo = 'lista';
+  let mostrarHistorico = false;
+  let lingua = localStorage.getItem('lingua') || 'pt';
+
+  // ── TRADUÇÕES ──────────────────────────────────────────────
+  const T = {
+    pt: {
+      titulo: 'Há Combustível — Maputo',
+      acarregar: 'a carregar...',
+      aatualizar: 'a atualizar...',
+      proxAtualizacao: 'próxima atualização',
+      disponivel: 'disponível',
+      comFila: 'com fila',
+      esgotado: 'esgotado',
+      minhaZona: 'A minha zona:',
+      todasZonas: 'Todas as zonas',
+      listaBombas: 'Lista de bombas',
+      situacaoAgora: 'Situação agora',
+      todos: 'Todos',
+      recentes: '+ Recentes',
+      gasolina: 'Gasolina',
+      gasoleo: 'Gasóleo',
+      reportar: '+ Reportar uma bomba',
+      atualizar: '↻ Atualizar',
+      disponiveis: 'disponíveis',
+      reportsHoje: 'reports hoje',
+      badgeVerde: 'Disponível',
+      badgeAmarelo: 'Com fila',
+      badgeVermelho: 'Esgotado',
+      semFila: 'Sem fila',
+      comFilaMas: 'Com fila mas tem',
+      esgotadoLabel: 'Esgotado',
+      partilharWA: 'Partilhar situação no WhatsApp',
+      verMais: (n) => `+ Ver mais ${n} bomba${n>1?'s':''} com info antiga`,
+      ocultarAntigas: 'Ocultar bombas com info antiga',
+      nenhuma: 'Nenhuma bomba com este filtro agora.',
+      erroLigacao: 'ligação lenta — tenta atualizar',
+      erroCarregar: 'erro ao carregar',
+      erroMsg: 'Não foi possível carregar os dados. Pode ser ligação fraca ou o servidor está ocupado. Tenta clicar em ↻ Atualizar em alguns segundos.',
+      notaDesatualizada: (n) => `⚠ ${n} bomba${n>1?'s':''} sem report na última hora — info pode estar velha. Activa "+ Recentes" para ver só o que é fresco.`,
+      filaMed: 'Fila média agora:',
+      filaUltimaHora: 'última hora',
+      situacaoAs: 'Situação às',
+      agoramMesmo: 'agora mesmo',
+      ha: 'há',
+      min: 'min',
+      infoAntiga: 'info antiga',
+      confirmBtnLabel: '✓ Ainda é assim',
+      // Frases por status
+      confirmarVerde: ['✓ Ainda tem!', '✓ Continua aberta!', '✓ Yah, ainda tem!', '✓ Tá boa ainda!'],
+      confirmarAmarelo: ['✓ Fila ainda lá', '✓ Continua cheio', '✓ Xi, fila ainda!', '✓ Ainda com fila'],
+      confirmarVermelho: ['✓ Ainda seco', '✓ Nada por aqui', '✓ Epa, nada ainda', '✓ Continua seco'],
+      atualizarVerde: ['Acabou? Avisa!', 'Situação piorou?', 'Fila apareceu? Conta!', 'Mudou? Reporta!'],
+      atualizarAmarelo: ['Acabou? Avisa!', 'Já passou a fila?', 'Piorou? Conta!', 'Mudou? Reporta!'],
+      atualizarVermelho: ['Já tem? Conta aí!', 'Voltou? Reporta!', 'Já melhorou?', 'Abriu? Avisa!'],
+    },
+    en: {
+      titulo: 'Há Combustível — Maputo',
+      acarregar: 'loading...',
+      aatualizar: 'updating...',
+      proxAtualizacao: 'next update',
+      disponivel: 'available',
+      comFila: 'queue',
+      esgotado: 'empty',
+      minhaZona: 'My area:',
+      todasZonas: 'All areas',
+      listaBombas: 'Station list',
+      situacaoAgora: 'Situation now',
+      todos: 'All',
+      recentes: '+ Recent',
+      gasolina: 'Petrol',
+      gasoleo: 'Diesel',
+      reportar: '+ Report a station',
+      atualizar: '↻ Refresh',
+      disponiveis: 'available',
+      reportsHoje: 'reports today',
+      badgeVerde: 'Available',
+      badgeAmarelo: 'Queue',
+      badgeVermelho: 'Empty',
+      semFila: 'No queue',
+      comFilaMas: 'Queue but has fuel',
+      esgotadoLabel: 'Empty',
+      partilharWA: 'Share on WhatsApp',
+      verMais: (n) => `+ Show ${n} more station${n>1?'s':''} with old info`,
+      ocultarAntigas: 'Hide stations with old info',
+      nenhuma: 'No stations match this filter right now.',
+      erroLigacao: 'slow connection — try refreshing',
+      erroCarregar: 'loading error',
+      erroMsg: 'Could not load data. Connection might be slow. Try tapping ↻ Refresh in a few seconds.',
+      notaDesatualizada: (n) => `⚠ ${n} station${n>1?'s':''} without a recent report — info may be stale. Enable "+ Recent" to see only fresh data.`,
+      filaMed: 'Avg queue now:',
+      filaUltimaHora: 'last hour',
+      situacaoAs: 'Situation at',
+      agoramMesmo: 'just now',
+      ha: '',
+      min: 'min ago',
+      infoAntiga: 'old info',
+      confirmBtnLabel: '✓ Still the same',
+      confirmarVerde: ['✓ Still open!', '✓ Still available!', '✓ Confirmed, still good!', '✓ Yep, still has fuel!'],
+      confirmarAmarelo: ['✓ Queue still there', '✓ Still busy', '✓ Queue confirmed', '✓ Still a wait'],
+      confirmarVermelho: ['✓ Still empty', '✓ Nothing yet', '✓ Still dry', '✓ No fuel yet'],
+      atualizarVerde: ['Ran out? Let us know!', 'Situation changed?', 'Queue appeared?', 'Changed? Report it!'],
+      atualizarAmarelo: ['Ran out? Tell us!', 'Queue gone?', 'Got worse? Report!', 'Changed? Tell us!'],
+      atualizarVermelho: ['Got fuel? Tell us!', 'Back open? Report!', 'Any update?', 'Improved? Let us know!'],
+    }
+  };
+
+  function t(key, ...args) {
+    const val = T[lingua][key];
+    return typeof val === 'function' ? val(...args) : val;
+  }
+
+  function toggleLang() {
+    lingua = lingua === 'pt' ? 'en' : 'pt';
+    localStorage.setItem('lingua', lingua);
+    document.getElementById('lang-btn').textContent = lingua === 'pt' ? 'EN' : 'PT';
+    aplicarTraducoes();
+    renderizar();
+    if (modoActivo === 'resumo') renderizarResumo();
+  }
+
+  function aplicarTraducoes() {
+    document.getElementById('lbl-disponivel').textContent = t('disponivel');
+    document.getElementById('lbl-fila').textContent       = t('comFila');
+    document.getElementById('lbl-esgotado').textContent   = t('esgotado');
+    document.getElementById('lbl-zona').textContent       = t('minhaZona');
+    document.getElementById('tab-lista').textContent      = t('listaBombas');
+    document.getElementById('tab-resumo').textContent     = t('situacaoAgora');
+    document.getElementById('f-todos').textContent        = t('todos');
+    document.getElementById('f-verde').textContent        = t('badgeVerde');
+    document.getElementById('f-amarelo').textContent      = t('comFila');
+    document.getElementById('f-vermelho').textContent     = t('esgotado');
+    document.getElementById('f-recentes').textContent     = t('recentes');
+    document.getElementById('f-gasolina').textContent     = t('gasolina');
+    document.getElementById('f-gasoleo').textContent      = t('gasoleo');
+    document.getElementById('fab-link').textContent       = t('reportar');
+    document.getElementById('btn-refresh').textContent    = t('atualizar');
+    document.getElementById('countdown-label').textContent= t('proxAtualizacao');
+    document.getElementById('tm-sub').textContent         = t('filaUltimaHora');
+    const sel = document.getElementById('zona-select');
+    if (sel.options[0]) sel.options[0].textContent = t('todasZonas');
+  }
+
+  // ── FRASES ────────────────────────────────────────────────
+  function fraseAleatoria(arr) {
+    return arr[Math.floor(Math.random() * arr.length)];
+  }
+  function fraseConfirmar(status) {
+    const map = { verde: 'confirmarVerde', amarelo: 'confirmarAmarelo', vermelho: 'confirmarVermelho' };
+    return fraseAleatoria(T[lingua][map[status] || 'confirmarVerde']);
+  }
+  function fraseAtualizar(status) {
+    const map = { verde: 'atualizarVerde', amarelo: 'atualizarAmarelo', vermelho: 'atualizarVermelho' };
+    return fraseAleatoria(T[lingua][map[status] || 'atualizarVerde']);
+  }
+
+  // ── MENSAGEM VIVA ─────────────────────────────────────────
+  const mensagensVivas = {
+    pt: {
+      muitasBoas:    (n,b) => [`Tá tranquilo por aí — ${n} bomba${n>1?'s':''} sem fila agora. ${b}`, 'positiva'],
+      algunsBoas:    (n)   => [`${n} bomba${n>1?'s':''} disponíve${n>1?'is':'l'} agora. Vai lá antes que acabe!`, 'positiva'],
+      muitaFila:     ()    => ['Epa, fila em todo lado. Mas a comunidade está de olho — reporta o que vês!', 'alerta'],
+      tudoEsgotado:  ()    => ['Tá pesado por aí. Nada reportado agora — mas pode mudar a qualquer momento.', 'critica'],
+      poucosReports: ()    => ['Cidade a dormir. Primeiro a reportar ganha o respeito de Maputo inteiro.', 'neutra'],
+      normal:        (n)   => [`${n} bomba${n>1?'s':''} no mapa agora. Info actualizada de 2 em 2 minutos.`, 'neutra'],
+    },
+    en: {
+      muitasBoas:    (n,b) => [`Looking good — ${n} station${n>1?'s':''} with no queue right now. ${b}`, 'positiva'],
+      algunsBoas:    (n)   => [`${n} station${n>1?'s':''} available now. Go before it runs out!`, 'positiva'],
+      muitaFila:     ()    => ['Queues everywhere. But the community is watching — report what you see!', 'alerta'],
+      tudoEsgotado:  ()    => ['Tough out there. Nothing reported right now — but things can change fast.', 'critica'],
+      poucosReports: ()    => ['City\'s quiet. Be the first to report and help everyone out!', 'neutra'],
+      normal:        (n)   => [`${n} station${n>1?'s':''} on the map. Updated every 2 minutes.`, 'neutra'],
+    }
+  };
+
+  function atualizarMensagemViva() {
+    if (!dados.length) return;
+    const mv = mensagensVivas[lingua];
+    const nVerde = dados.filter(p => normalizarStatus(p['Status']) === 'verde').length;
+    const nAmarelo = dados.filter(p => normalizarStatus(p['Status']) === 'amarelo').length;
+    const nVermelho = dados.filter(p => normalizarStatus(p['Status']) === 'vermelho').length;
+    const total = dados.length;
+
+    let texto, classe;
+    const melhores = dados
+      .filter(p => normalizarStatus(p['Status']) === 'verde')
+      .sort((a,b) => (parseData(b['Carimbo de data/hora'])||0)-(parseData(a['Carimbo de data/hora'])||0))
+      .slice(0,2)
+      .map(p => p['Nome da bomba de combustível'] + ' (' + bairroExibicao(bairroReal(p)) + ')')
+      .join(', ');
+
+    if (nVerde >= 5) {
+      [texto, classe] = mv.muitasBoas(nVerde, melhores ? '— ex: ' + melhores : '');
+    } else if (nVerde >= 1) {
+      [texto, classe] = mv.algunsBoas(nVerde);
+    } else if (nAmarelo > nVermelho) {
+      [texto, classe] = mv.muitaFila();
+    } else if (nVermelho === total) {
+      [texto, classe] = mv.tudoEsgotado();
+    } else if (total < 5) {
+      [texto, classe] = mv.poucosReports();
+    } else {
+      [texto, classe] = mv.normal(total);
+    }
+
+    const el = document.getElementById('mensagem-viva');
+    el.className = `mensagem-viva ${classe}`;
+    document.getElementById('mv-texto').textContent = texto;
+  }
+
+  // ── TEMPO MÉDIO GLOBAL ────────────────────────────────────
+  function atualizarTempoMedioGlobal() {
+    const agora = Date.now();
+    const umaHora = 60 * 60 * 1000;
+    const CAMPO = 'Quanto tempo esperaste na fila?';
+    const mapa = { 'Menos de 15 min': 8, '15 a 30 min': 22, '30 min a 1 hora': 45, 'Mais de 1 hora': 75 };
+    const valores = todosOsDados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return ts && (agora - ts) <= umaHora && p[CAMPO] && mapa[p[CAMPO]];
+    }).map(p => mapa[p[CAMPO]]);
+
+    const bar = document.getElementById('tempo-medio-bar');
+    if (!valores.length) { bar.classList.add('escondido'); return; }
+
+    const media = Math.round(valores.reduce((a,b) => a+b, 0) / valores.length);
+    bar.classList.remove('escondido');
+    const label = media < 15
+      ? (lingua === 'pt' ? 'menos de 15 min' : 'under 15 min')
+      : media < 60
+        ? `~${media} min`
+        : (lingua === 'pt' ? 'mais de 1h' : 'over 1h');
+    document.getElementById('tm-label').textContent = t('filaMed') + ' ' + label;
+  }
+
+  // ── PARSING ───────────────────────────────────────────────
+  function normalizarStatus(raw) {
+    if (!raw) return 'cinza';
+    const r = raw.toLowerCase();
+    if (r.includes('sem fila') || (r.includes('disponível') && !r.includes('fila'))) return 'verde';
+    if (r.includes('fila') || r.includes('com fila')) return 'amarelo';
+    if (r.includes('esgotado')) return 'vermelho';
+    return 'cinza';
+  }
+
+  function badgeLabel(s) {
+    const m = { verde: t('badgeVerde'), amarelo: t('badgeAmarelo'), vermelho: t('badgeVermelho'), cinza: '?' };
+    return m[s] || '?';
+  }
+
+  function parseData(ts) {
+    if (!ts) return null;
+    const m = ts.match(/(\d{2})\/(\d{2})\/(\d{4})\s+(\d{2}):(\d{2}):(\d{2})/);
+    if (m) return new Date(+m[3], +m[2]-1, +m[1], +m[4], +m[5], +m[6]);
+    const d = new Date(ts);
+    return isNaN(d) ? null : d;
+  }
+
+  function tempoRelativo(ts) {
+    const d = parseData(ts);
+    if (!d) return '';
+    const diff = Math.floor((Date.now() - d) / 60000);
+    if (diff < 2)  return lingua === 'pt' ? 'agora mesmo' : 'just now';
+    if (diff < 60) return lingua === 'pt' ? `há ${diff} min` : `${diff} min ago`;
+    const h = Math.floor(diff / 60);
+    const mn = diff % 60;
+    if (lingua === 'pt') return mn > 0 ? `há ${h}h ${mn}min` : `há ${h}h`;
+    return mn > 0 ? `${h}h ${mn}min ago` : `${h}h ago`;
+  }
+
+  function parseCombustivel(raw) {
+    if (!raw) return [];
+    const r = raw.toLowerCase();
+    if (r.includes('ambos')) return ['ambos'];
+    const tipos = [];
+    if (r.includes('gasolina')) tipos.push('gasolina');
+    if (r.includes('gasóleo') || r.includes('gasoleo') || r.includes('diesel')) tipos.push('gasoleo');
+    return tipos;
+  }
+
+  function pillsCombustivel(tipos) {
+    if (!tipos.length) return '';
+    const gLabel = lingua === 'pt' ? 'Gasolina' : 'Petrol';
+    const dLabel = lingua === 'pt' ? 'Gasóleo'  : 'Diesel';
+    const bLabel = lingua === 'pt' ? 'Gasolina + Gasóleo' : 'Petrol + Diesel';
+    if (tipos.includes('ambos')) return `<span class="pill-comb pill-ambos">${bLabel}</span>`;
+    return tipos.map(t => {
+      if (t === 'gasolina') return `<span class="pill-comb pill-gasolina">${gLabel}</span>`;
+      if (t === 'gasoleo')  return `<span class="pill-comb pill-gasoleo">${dLabel}</span>`;
+      return '';
+    }).join('');
+  }
+
+  function parseLinha(linha) {
+    const campos = [];
+    let atual = '', dentroAspas = false;
+    for (let i = 0; i < linha.length; i++) {
+      if (linha[i] === '"') { dentroAspas = !dentroAspas; continue; }
+      if (linha[i] === ',' && !dentroAspas) { campos.push(atual.trim()); atual = ''; continue; }
+      atual += linha[i];
+    }
+    campos.push(atual.trim());
+    return campos;
+  }
+
+  function parseCSV(text) {
+    const linhas = text.trim().split('\n');
+    const cabecalho = parseLinha(linhas[0]).map(c => c.replace(/^[\s"'\uFEFF]+|[\s"']+$/g, ''));
+    return linhas.slice(1).map(linha => {
+      const campos = parseLinha(linha);
+      const obj = {};
+      cabecalho.forEach((k, i) => obj[k] = (campos[i] || '').replace(/^[\s"']+|[\s"']+$/g, ''));
+      return obj;
+    }).filter(r => r['Nome da bomba de combustível']);
+  }
+
+  function maisRecentePorBomba(lista) {
+    const mapa = {};
+    lista.forEach(p => {
+      const chave = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!mapa[chave] || (ts && ts > (parseData(mapa[chave]['Carimbo de data/hora']) || 0))) {
+        mapa[chave] = p;
+      }
+    });
+    return Object.values(mapa);
+  }
+
+  function contarReports(todosRaw, nomeBomba, bairro, status) {
+    const agora = Date.now();
+    const limite = 3 * 60 * 60 * 1000;
+    return todosRaw.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return false;
+      return (p['Nome da bomba de combustível']||'').toLowerCase().trim() === nomeBomba.toLowerCase().trim()
+        && bairroReal(p) === bairro
+        && normalizarStatus(p['Status']) === status;
+    }).length;
+  }
+
+  function calcularTempoMedio(todosRaw, nomeBomba, bairro) {
+    const agora = Date.now();
+    const limite = 2 * 60 * 60 * 1000;
+    const CAMPO = 'Quanto tempo esperaste na fila?';
+    const mapa = { 'Menos de 15 min': 8, '15 a 30 min': 22, '30 min a 1 hora': 45, 'Mais de 1 hora': 75 };
+    const valores = todosRaw.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return false;
+      return (p['Nome da bomba de combustível']||'').toLowerCase().trim() === nomeBomba.toLowerCase().trim()
+        && bairroReal(p) === bairro
+        && p[CAMPO] && mapa[p[CAMPO]];
+    }).map(p => mapa[p[CAMPO]]);
+    if (!valores.length) return null;
+    const media = Math.round(valores.reduce((a,b) => a+b, 0) / valores.length);
+    if (lingua === 'pt') {
+      if (media < 15) return 'menos de 15 min de fila';
+      if (media < 60) return `~${media} min de fila`;
+      return 'mais de 1h de fila';
+    } else {
+      if (media < 15) return 'under 15 min wait';
+      if (media < 60) return `~${media} min wait`;
+      return 'over 1h wait';
+    }
+  }
+
+  function bairroReal(p) {
+    const outro = (p['Outro bairro. Qual?'] || '').trim();
+    const b = (p['Bairro'] || '').trim();
+    return outro || b || 'Outros';
+  }
+
+  function bairroExibicao(b) {
+    const sujos = ['outro bairro - indique na pergunta abaixo', 'outro bairro', 'indique na pergunta abaixo'];
+    if (sujos.some(s => b.toLowerCase().includes(s))) return lingua === 'pt' ? 'Outro bairro' : 'Other area';
+    return b;
+  }
+
+  function agruparPorBairro(lista) {
+    const grupos = {};
+    lista.forEach(p => {
+      const b = bairroReal(p);
+      if (!grupos[b]) grupos[b] = [];
+      grupos[b].push(p);
+    });
+    return grupos;
+  }
+
+  function atualizarAlertaTransito(todosRaw) {
+    const agora = Date.now();
+    const limite = 60 * 60 * 1000;
+    const bairrosComFila = {};
+    todosRaw.forEach(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      if (!ts || (agora - ts) > limite) return;
+      if (normalizarStatus(p['Status']) !== 'amarelo') return;
+      const b = bairroReal(p);
+      bairrosComFila[b] = (bairrosComFila[b] || 0) + 1;
+    });
+    const criticos = Object.entries(bairrosComFila)
+      .filter(([,n]) => n >= 2).sort((a,b) => b[1]-a[1]).map(([b]) => b);
+    const el = document.getElementById('alerta-transito');
+    if (criticos.length) {
+      el.textContent = lingua === 'pt'
+        ? '⚠ Trânsito provável em: ' + criticos.slice(0,4).join(', ') + ' — várias bombas com fila na última hora.'
+        : '⚠ Likely traffic in: ' + criticos.slice(0,4).join(', ') + ' — multiple stations with queues in the last hour.';
+      el.classList.add('visivel');
+    } else {
+      el.classList.remove('visivel');
+    }
+  }
+
+  function atualizarBanner(grupos) {
+    const esgotados = [];
+    Object.entries(grupos).forEach(([bairro, bombas]) => {
+      if (bombas.every(p => normalizarStatus(p['Status']) === 'vermelho')) esgotados.push(bairro);
+    });
+    const banner = document.getElementById('banner-urgencia');
+    if (esgotados.length >= 3) {
+      banner.textContent = lingua === 'pt'
+        ? `⚠ Sem combustível reportado em: ${esgotados.slice(0,5).join(', ')}`
+        : `⚠ No fuel reported in: ${esgotados.slice(0,5).join(', ')}`;
+      banner.classList.add('visivel');
+    } else {
+      banner.classList.remove('visivel');
+    }
+  }
+
+  function popularSelectZona(bairros) {
+    const sel = document.getElementById('zona-select');
+    sel.innerHTML = `<option value="">${t('todasZonas')}</option>`;
+    bairros.sort().forEach(b => {
+      const opt = document.createElement('option');
+      opt.value = b;
+      opt.textContent = bairroExibicao(b);
+      if (b === zonaActiva) opt.selected = true;
+      sel.appendChild(opt);
+    });
+  }
+
+  function guardarZona(val) {
+    zonaActiva = val;
+    if (val) localStorage.setItem('minhaZona', val);
+    else localStorage.removeItem('minhaZona');
+    renderizar();
+  }
+
+  function confirmar(chave, btn, status) {
+    if (confirmacoes[chave]) return;
+    confirmacoes[chave] = true;
+    localStorage.setItem('confirmacoes', JSON.stringify(confirmacoes));
+    btn.classList.add('confirmado');
+    btn.textContent = fraseConfirmar(status);
+  }
+
+  function mudarModo(modo, btn) {
+    modoActivo = modo;
+    document.querySelectorAll('.modo-tab').forEach(b => b.className = 'modo-tab');
+    btn.className = 'modo-tab on-' + modo;
+    document.getElementById('painel-lista').style.display  = modo === 'lista'  ? 'block' : 'none';
+    document.getElementById('painel-resumo').style.display = modo === 'resumo' ? 'block' : 'none';
+    if (modo === 'resumo') renderizarResumo();
+  }
+
+  function toggleHistorico() {
+    mostrarHistorico = !mostrarHistorico;
+    renderizar();
+  }
+
+  function renderizar() {
+    let filtrados = dados;
+    if (zonaActiva) filtrados = filtrados.filter(p => bairroReal(p) === zonaActiva);
+    if (filtroStatus !== 'todos') filtrados = filtrados.filter(p => normalizarStatus(p['Status']) === filtroStatus);
+    if (filtroComb !== 'todos') {
+      filtrados = filtrados.filter(p => {
+        const tipos = parseCombustivel(p['Que tipo de combustível está disponível?']);
+        return tipos.includes(filtroComb) || tipos.includes('ambos');
+      });
+    }
+    if (filtroRecentes) {
+      const umaHora = 60 * 60 * 1000;
+      filtrados = filtrados.filter(p => {
+        const ts = parseData(p['Carimbo de data/hora']);
+        return ts && (Date.now() - ts) <= umaHora;
+      });
+    }
+
+    const grupos = agruparPorBairro(filtrados);
+    const todosGrupos = agruparPorBairro(dados);
+    atualizarBanner(todosGrupos);
+
+    const bairros = Object.keys(grupos).sort();
+    if (!bairros.length) {
+      document.getElementById('lista').innerHTML = `<div class="vazio">${t('nenhuma')}</div>`;
+      return;
+    }
+
+    const umaHora = 60 * 60 * 1000;
+    const nAntigas = filtrados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return !ts || (Date.now() - ts) > umaHora;
+    }).length;
+    const notaHtml = nAntigas > 0 && !filtroRecentes
+      ? `<div class="nota-desatualizada">${t('notaDesatualizada', nAntigas)}</div>` : '';
+
+    let html = notaHtml;
+    bairros.forEach(bairro => {
+      const bombas = grupos[bairro];
+      const nomeBairro = bairroExibicao(bairro);
+      html += `<div class="bairro-bloco"><div class="bairro-header"><div class="bairro-titulo">${nomeBairro}</div></div>`;
+
+      bombas.sort((a,b) => (parseData(b['Carimbo de data/hora'])||0)-(parseData(a['Carimbo de data/hora'])||0));
+      bombas.forEach(p => {
+        const status   = normalizarStatus(p['Status']);
+        const ref      = (p['Referências sobre a bomba'] || '').trim();
+        const obs      = (p['Observações'] || '').trim();
+        const hora     = tempoRelativo(p['Carimbo de data/hora']);
+        const detalhe  = ref || obs;
+        const tipos    = parseCombustivel(p['Que tipo de combustível está disponível?']);
+        const chave    = (p['Nome da bomba de combustível'] + '||' + (p['Bairro'] || '')).toLowerCase().trim();
+        const chaveEsc = chave.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+        const jaConf   = !!confirmacoes[chave];
+        const nReports = contarReports(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p), status);
+        const rClass   = nReports >= 5 ? 'alto' : nReports >= 2 ? 'medio' : '';
+        const rLabel   = nReports >= 2
+          ? (lingua === 'pt' ? `${nReports} reports confirmam` : `${nReports} reports confirm`)
+          : nReports === 1 ? '1 report' : '';
+        const tempoF   = status === 'amarelo' ? calcularTempoMedio(todosOsDados, p['Nome da bomba de combustível'], bairroReal(p)) : null;
+        const tsData   = parseData(p['Carimbo de data/hora']);
+        const antigo   = tsData && (Date.now() - tsData) > umaHora;
+        const fAtual   = fraseAtualizar(status);
+        const fConf    = jaConf ? fraseConfirmar(status) : t('confirmBtnLabel');
+        const antigoTxt = lingua === 'pt' ? '· pode estar desatualizado' : '· may be outdated';
+
+        html += `
+          <div class="bomba-card">
+            <div class="bomba-card-top">
+              <div class="bomba-esq">
+                <div class="dot dot-${status}"></div>
+                <div class="bomba-info">
+                  <div class="bomba-nome">${p['Nome da bomba de combustível']}</div>
+                  ${tipos.length ? `<div class="bomba-combustivel">${pillsCombustivel(tipos)}</div>` : ''}
+                  ${detalhe ? `<div class="bomba-obs">${detalhe}</div>` : ''}
+                  ${hora ? `<div class="bomba-hora">${hora}${antigo ? ` <span style="color:#c0392b;font-style:normal">${antigoTxt}</span>` : ''}</div>` : ''}
+                  ${rLabel ? `<div class="report-count ${rClass}">${rLabel}</div>` : ''}
+                  ${tempoF ? `<div class="tempo-fila">⏱ ${tempoF}</div>` : ''}
+                </div>
+              </div>
+              <div class="badge badge-${status}">${badgeLabel(status)}</div>
+            </div>
+            <div class="bomba-card-footer">
+              <button class="confirmar-btn ${jaConf ? 'confirmado' : ''}"
+                onclick="confirmar('${chaveEsc}', this, '${status}')">
+                ${fConf}
+              </button>
+              <a class="actualizar-btn" href="${FORM_URL}" target="_blank">${fAtual}</a>
+            </div>
+          </div>`;
+      });
+      html += `</div>`;
+    });
+
+    const tresH2 = LIMITE_HORAS * 60 * 60 * 1000;
+    const nEscondidas = dados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return !ts || (Date.now() - ts) > tresH2;
+    }).length;
+    if (nEscondidas > 0 && !mostrarHistorico) {
+      html += `<div class="toggle-historico" onclick="toggleHistorico()">${t('verMais', nEscondidas)}</div>`;
+    } else if (mostrarHistorico && nEscondidas > 0) {
+      html += `<div class="toggle-historico" onclick="toggleHistorico()">${t('ocultarAntigas')}</div>`;
+    }
+
+    document.getElementById('lista').innerHTML = html;
+  }
+
+  function infoCombu(bombas) {
+    const tipos = new Set();
+    bombas.forEach(p => {
+      parseCombustivel(p['Que tipo de combustível está disponível?']).forEach(x => tipos.add(x));
+    });
+    if (tipos.has('ambos')) return lingua === 'pt' ? 'gasolina e gasóleo' : 'petrol & diesel';
+    const arr = [...tipos];
+    if (arr.includes('gasolina') && arr.includes('gasoleo')) return lingua === 'pt' ? 'gasolina e gasóleo' : 'petrol & diesel';
+    if (arr.includes('gasolina')) return lingua === 'pt' ? 'só gasolina' : 'petrol only';
+    if (arr.includes('gasoleo'))  return lingua === 'pt' ? 'só gasóleo'  : 'diesel only';
+    return '';
+  }
+
+  function frescuraBairro(bombas) {
+    const agora = Date.now();
+    const maisRecente = bombas.reduce((best, p) => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return (ts && (!best || ts > best)) ? ts : best;
+    }, null);
+    if (!maisRecente) return t('infoAntiga');
+    const diff = Math.floor((agora - maisRecente) / 60000);
+    if (diff < 5)  return lingua === 'pt' ? 'agora mesmo' : 'just now';
+    if (diff < 60) return lingua === 'pt' ? `há ${diff} min` : `${diff} min ago`;
+    const h = Math.floor(diff / 60);
+    return lingua === 'pt' ? `há ${h}h` : `${h}h ago`;
+  }
+
+  function renderizarResumo() {
+    const tresHoras = LIMITE_HORAS * 60 * 60 * 1000;
+    const recentes = dados.filter(p => {
+      const ts = parseData(p['Carimbo de data/hora']);
+      return ts && (Date.now() - ts) <= tresHoras;
+    });
+    const base = recentes.length > 0 ? recentes : dados;
+
+    const dispSemFila = base.filter(p => normalizarStatus(p['Status']) === 'verde');
+    const dispComFila = base.filter(p => normalizarStatus(p['Status']) === 'amarelo');
+    const esgotadas   = base.filter(p => normalizarStatus(p['Status']) === 'vermelho');
+
+    const hora = new Date().toLocaleTimeString('pt-MZ', {hour:'2-digit', minute:'2-digit'});
+    let txt = `<div class="resumo-titulo">${t('situacaoAs')} ${hora}</div>`;
+    const linhasWA = [lingua === 'pt' ? '*Ha Combustivel - Maputo* (situacao agora)' : '*Ha Combustivel - Maputo* (situation now)'];
+
+    function linhasBomba(lista, emojiWA) {
+      let h = '';
+      lista.slice(0,6).forEach(p => {
+        const nome  = p['Nome da bomba de combustível'] || '?';
+        const bairro = bairroExibicao(bairroReal(p));
+        const comb  = infoCombu([p]);
+        const when  = frescuraBairro([p]);
+        const combTxt = comb ? ` (${comb})` : '';
+        h += `<span class="resumo-zona-txt"><b>${nome}</b> — ${bairro}${combTxt} · <span style="color:#aaa">${when}</span></span><br>`;
+        linhasWA.push(`${emojiWA} ${nome} - ${bairro}${combTxt} (${when})`);
+      });
+      return h;
+    }
+
+    if (dispSemFila.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">${t('semFila')}</span><br>${linhasBomba(dispSemFila,'[OK]')}</div>`;
+    }
+    if (dispComFila.length) {
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">${t('comFilaMas')}</span><br>${linhasBomba(dispComFila,'[FILA]')}</div>`;
+    }
+    if (esgotadas.length) {
+      const nomes = esgotadas.slice(0,5).map(p => `${p['Nome da bomba de combustível']} (${bairroExibicao(bairroReal(p))})`).join(', ');
+      const frase = lingua === 'pt'
+        ? `Nada em: ${nomes}. Não percas tempo.`
+        : `Empty: ${nomes}. Save yourself the trip.`;
+      txt += `<div class="resumo-zona"><span class="resumo-zona-nome">${t('esgotadoLabel')}</span><br><span class="resumo-zona-txt" style="color:#c0392b">${frase}</span></div>`;
+      linhasWA.push(`[SEM] ${lingua === 'pt' ? 'Esgotado' : 'Empty'}: ${esgotadas.slice(0,5).map(p => bairroExibicao(bairroReal(p))).join(', ')}`);
+    }
+
+    linhasWA.push('');
+    linhasWA.push('Ver tudo: https://nowledge-mz.github.io/hacombustivel');
+    linhasWA.push(lingua === 'pt' ? 'Um projecto Nowledge' : 'A Nowledge project');
+    const wa = linhasWA.join('\n');
+
+    document.getElementById('painel-resumo').innerHTML = `
+      <div class="resumo-box">${txt}</div>
+      <button class="partilhar-resumo" id="btn-partilhar-wa">${t('partilharWA')}</button>`;
+    document.getElementById('btn-partilhar-wa').addEventListener('click', () => {
+      window.open('https://wa.me/?text=' + encodeURIComponent(wa), '_blank');
+    });
+  }
+
+  function filtrar(f, btn) {
+    filtroStatus = f;
+    ['todos','verde','amarelo','vermelho'].forEach(id => {
+      document.getElementById('f-' + id).className = 'fbtn';
+    });
+    const classes = { todos: 'fbtn on', verde: 'fbtn on-verde', amarelo: 'fbtn on-amarelo', vermelho: 'fbtn on-verm' };
+    btn.className = classes[f];
+    renderizar();
+  }
+
+  function filtrarRecentes(btn) {
+    filtroRecentes = !filtroRecentes;
+    btn.className = filtroRecentes ? 'fbtn on-recentes' : 'fbtn';
+    renderizar();
+  }
+
+  function filtrarComb(f, btn) {
+    if (filtroComb === f) {
+      filtroComb = 'todos';
+      btn.className = 'fbtn';
+    } else {
+      filtroComb = f;
+      document.getElementById('f-gasolina').className = 'fbtn';
+      document.getElementById('f-gasoleo').className  = 'fbtn';
+      btn.className = f === 'gasolina' ? 'fbtn on-gasolina' : 'fbtn on-gasoleo';
+    }
+    renderizar();
+  }
+
+  async function carregarDados() {
+    document.getElementById('header-sub').textContent = t('aatualizar');
+    try {
+      const controller = new AbortController();
+      const timeout = setTimeout(() => controller.abort(), 15000);
+      const resp = await fetch(SHEET_URL + '&t=' + Date.now(), { signal: controller.signal });
+      clearTimeout(timeout);
+      const text = await resp.text();
+      todosOsDados = parseCSV(text);
+      const tresH = LIMITE_HORAS * 60 * 60 * 1000;
+      const recentes = todosOsDados.filter(p => {
+        const ts = parseData(p['Carimbo de data/hora']);
+        return ts && (Date.now() - ts) <= tresH;
+      });
+      dados = maisRecentePorBomba(recentes.length >= 5 ? recentes : todosOsDados);
+
+      let nV = 0, nA = 0, nR = 0;
+      dados.forEach(p => {
+        const s = normalizarStatus(p['Status']);
+        if (s === 'verde') nV++; else if (s === 'amarelo') nA++; else if (s === 'vermelho') nR++;
+      });
+
+      document.getElementById('count-verde').textContent    = nV;
+      document.getElementById('count-amarelo').textContent  = nA;
+      document.getElementById('count-vermelho').textContent = nR;
+
+      const disponiveis = nV + nA;
+      document.getElementById('page-title').textContent = `(${disponiveis} ${t('disponiveis')}) Há Combustível`;
+      document.title = `(${disponiveis} ${t('disponiveis')}) Há Combustível — Maputo`;
+
+      const agora = new Date().toLocaleTimeString('pt-MZ', {hour:'2-digit', minute:'2-digit'});
+      document.getElementById('header-sub').textContent = `${todosOsDados.length} ${t('reportsHoje')} · ${agora}`;
+
+      const bairros = [...new Set(dados.map(p => bairroReal(p)))];
+      popularSelectZona(bairros);
+      atualizarAlertaTransito(todosOsDados);
+      atualizarMensagemViva();
+      atualizarTempoMedioGlobal();
+      aplicarTraducoes();
+      renderizar();
+      if (modoActivo === 'resumo') renderizarResumo();
+    } catch (e) {
+      const msg = e.name === 'AbortError' ? t('erroLigacao') : t('erroCarregar');
+      document.getElementById('header-sub').textContent = msg;
+      document.getElementById('lista').innerHTML = `<div class="erro">${t('erroMsg')}</div>`;
+    }
+  }
+
+  let countdownInterval = null;
+  let nextRefresh = Date.now() + REFRESH_MS;
+
+  function iniciarCountdown() {
+    if (countdownInterval) clearInterval(countdownInterval);
+    nextRefresh = Date.now() + REFRESH_MS;
+    countdownInterval = setInterval(() => {
+      const restante = Math.max(0, nextRefresh - Date.now());
+      const mins = Math.floor(restante / 60000);
+      const secs = Math.floor((restante % 60000) / 1000);
+      const pct  = Math.round((restante / REFRESH_MS) * 100);
+      document.getElementById('countdown-num').textContent = mins + ':' + String(secs).padStart(2,'0');
+      document.getElementById('countdown-fill').style.width = pct + '%';
+      if (restante === 0) { carregarDados(); iniciarCountdown(); }
+    }, 1000);
+  }
+
+  // Aplicar língua guardada antes de carregar
+  document.getElementById('lang-btn').textContent = lingua === 'pt' ? 'EN' : 'PT';
+
+  async function carregarEIniciar() {
+    await carregarDados();
+    iniciarCountdown();
+  }
+
+  carregarEIniciar();
+  setInterval(() => { carregarDados(); iniciarCountdown(); }, REFRESH_MS);
+</script>
+</body>
+</html>
