@@ -651,11 +651,25 @@
   }
 
   function parseCSV(text) {
-    const linhas = text.trim().split('\n');
-    const cab = parseLinha(linhas[0]).map(c => c.replace(/^[\s"'\uFEFF]+|[\s"']+$/g, ''));
+    // Remove BOM e normalizar quebras de linha dentro de aspas
+    text = text.replace(/\uFEFF/g, '');
+    // Juntar linhas que estão dentro de aspas (campos multilinha)
+    const linhasRaw = text.split('\n');
+    const linhas = [];
+    let buffer = '';
+    let inQuote = false;
+    for (let i = 0; i < linhasRaw.length; i++) {
+      const l = linhasRaw[i];
+      for (let c of l) { if (c === '"') inQuote = !inQuote; }
+      buffer += (buffer ? ' ' : '') + l;
+      if (!inQuote) { linhas.push(buffer); buffer = ''; }
+    }
+    if (buffer) linhas.push(buffer);
+
+    const cab = parseLinha(linhas[0]).map(c => c.replace(/^[\s"'\uFEFF]+|[\s"']+$/g, '').trim());
     return linhas.slice(1).map(l => {
       const campos = parseLinha(l), obj = {};
-      cab.forEach((k,i) => obj[k] = (campos[i]||'').replace(/^[\s"']+|[\s"']+$/g,''));
+      cab.forEach((k,i) => obj[k] = (campos[i]||'').replace(/^[\s"']+|[\s"']+$/g,'').trim());
       return obj;
     }).filter(r => r['Nome da bomba de combustível / Fuel station name']);
   }
@@ -663,7 +677,7 @@
   function maisRecentePorBomba(lista) {
     const mapa = {};
     lista.forEach(p => {
-      const chave = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood  ']||'')).toLowerCase().trim();
+      const chave = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood']||'')).toLowerCase().trim();
       const ts = parseData(p['Carimbo de data/hora']);
       if (!mapa[chave] || (ts && ts > (parseData(mapa[chave]['Carimbo de data/hora'])||0))) mapa[chave] = p;
     });
@@ -671,8 +685,8 @@
   }
 
   function bairroReal(p) {
-    const outro = (p['Outro bairro. Qual? /  Other neighbourhood. Which one? ']||'').trim();
-    return outro || (p['Bairro / Neighbourhood  ']||'').trim() || 'Outros';
+    const outro = (p['Outro bairro. Qual? /  Other neighbourhood. Which one?']||'').trim();
+    return outro || (p['Bairro / Neighbourhood']||'').trim() || 'Outros';
   }
 
   function bairroExibicao(b) {
@@ -862,12 +876,12 @@
       bombas.sort((a,b)=>(parseData(b['Carimbo de data/hora'])||0)-(parseData(a['Carimbo de data/hora'])||0));
       bombas.forEach(p => {
         const status  = normalizarStatus(p['Status']);
-        const ref     = (p['Referências sobre a bomba / \nLandmark']||'').trim();
-        const obs     = (p['Observações /  Any additional notes ']||'').trim();
+        const ref     = (p['Referências sobre a bomba /  Landmark']||'').trim();
+        const obs     = (p['Observações /  Any additional notes']||'').trim();
         const hora    = tempoRelativo(p['Carimbo de data/hora']);
         const detalhe = ref||obs;
         const tipos   = parseCombustivel(p['Que tipo de combustível está disponível? /  What type of fuel is available?']);
-        const chave   = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood  ']||'')).toLowerCase().trim();
+        const chave   = (p['Nome da bomba de combustível / Fuel station name']+'||'+(p['Bairro / Neighbourhood']||'')).toLowerCase().trim();
         const chaveE  = chave.replace(/\\/g,'\\\\').replace(/'/g,"\\'");
         const jaConf  = !!confirmacoes[chave];
         const nRep    = contarReports(p['Nome da bomba de combustível / Fuel station name'], bairroReal(p), status);
