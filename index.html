@@ -14,6 +14,54 @@
       margin: 0 auto;
     }
 
+    /* ── CIDADE SELECTOR ── */
+    .cidade-bar {
+      background: #1a1a18;
+      padding: 0 16px 10px;
+      display: flex;
+      gap: 6px;
+    }
+    .cidade-btn {
+      flex: 1;
+      padding: 7px 8px 6px;
+      border-radius: 8px;
+      border: 1px solid #333;
+      background: none;
+      cursor: pointer;
+      text-align: center;
+      transition: all 0.15s;
+    }
+    .cidade-btn-nome {
+      font-size: 13px;
+      font-weight: 700;
+      color: #666;
+      display: block;
+      line-height: 1.2;
+    }
+    .cidade-btn-hint {
+      font-size: 9px;
+      color: #444;
+      display: block;
+      margin-top: 1px;
+    }
+    .cidade-btn.on {
+      background: #f5f5f0;
+      border-color: #f5f5f0;
+    }
+    .cidade-btn.on .cidade-btn-nome { color: #1a1a18; }
+    .cidade-btn.on .cidade-btn-hint { color: #888; }
+    .beira-badge {
+      display: inline-block;
+      background: #185fa5;
+      color: #fff;
+      font-size: 9px;
+      font-weight: 700;
+      padding: 1px 6px;
+      border-radius: 8px;
+      margin-left: 4px;
+      vertical-align: middle;
+    }
+
     /* ── HEADER ── */
     .header {
       background: #1a1a18;
@@ -405,6 +453,16 @@
   </div>
 </div>
 
+<!-- CIDADE SELECTOR -->
+<div class="cidade-bar" id="cidade-bar">
+  <button class="cidade-btn on" id="btn-maputo" onclick="mudarCidade('maputo', this)">
+    <span class="cidade-btn-nome">Maputo</span>
+  </button>
+  <button class="cidade-btn" id="btn-beira" onclick="mudarCidade('beira', this)">
+    <span class="cidade-btn-nome">Beira <span class="beira-badge">NOVO</span></span>
+  </button>
+</div>
+
 <!-- TOP PICKS -->
 <div class="top-picks">
   <div class="top-picks-label" id="tp-label">Melhores agora</div>
@@ -471,8 +529,18 @@
 <a class="fab" id="fab-link" href="https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform" target="_blank">+ Reportar uma bomba</a>
 
 <script>
-  const SHEET_URL = 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?output=csv';
-  const FORM_URL  = 'https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform';
+  const SHEETS = {
+    maputo: 'https://docs.google.com/spreadsheets/d/e/2PACX-1vRJLGaDPJZPNQFExrKPrBQgW1gj5dW_ok9IE-zaTDygqgLMSNC1AJ2n8glafewBBYO1GFT0ZXqGV9GI/pub?output=csv',
+    beira:  'https://docs.google.com/spreadsheets/d/e/2PACX-1vQBKUQVL12UeBRTNyqaCFbD10TUNZJM2Igr8uGoXksSywtJ-S7y5mkwyVJO_afKGrnRZzJfExmQM-Sm/pub?gid=208127512&single=true&output=csv',
+  };
+  const FORMS = {
+    maputo: 'https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform',
+    beira:  'https://docs.google.com/forms/d/e/1FAIpQLSfv-UJyaqEVK3CF_c9yQaq1iE6Lr4dHmJhd0nU9DGRYhLxcCQ/viewform',
+  };
+  let cidadeActiva = localStorage.getItem('cidade') || 'maputo';
+  let SHEET_URL = SHEETS[cidadeActiva];
+  let FORM_URL  = FORMS[cidadeActiva];
+
   const REFRESH_MS   = 2 * 60 * 1000;
   const LIMITE_HORAS = 3;
 
@@ -486,7 +554,7 @@
   /* ── TRADUÇÕES ── */
   const T = {
     pt: {
-      titulo: 'Há Combustível — Maputo',
+      titulo: {maputo: 'Há Combustível — Maputo', beira: 'Há Combustível — Beira'},
       acarregar: 'a carregar...', aatualizar: 'a atualizar...',
       proxAtu: 'próxima atualização',
       disponivel: 'disponível', comFila: 'com fila', esgotado: 'esgotado',
@@ -521,7 +589,7 @@
       confirmarLabel: '✓ Ainda é assim',
     },
     en: {
-      titulo: 'Há Combustível — Maputo',
+      titulo: {maputo: 'Há Combustível — Maputo', beira: 'Há Combustível — Beira'},
       acarregar: 'loading...', aatualizar: 'updating...',
       proxAtu: 'next update',
       disponivel: 'available', comFila: 'queue', esgotado: 'empty',
@@ -561,6 +629,28 @@
   const rnd = (arr) => arr[Math.floor(Math.random() * arr.length)];
   const fraseConf = (s) => rnd(T[lingua]['confirmar' + s.charAt(0).toUpperCase() + s.slice(1)] || T[lingua].confirmarVerde);
   const fraseAtu  = (s) => rnd(T[lingua]['atualizar'  + s.charAt(0).toUpperCase() + s.slice(1)] || T[lingua].atualizarVerde);
+
+  function mudarCidade(cidade, btn) {
+    cidadeActiva = cidade;
+    SHEET_URL = SHEETS[cidade];
+    FORM_URL  = FORMS[cidade];
+    localStorage.setItem('cidade', cidade);
+    document.querySelectorAll('.cidade-btn').forEach(b => b.classList.remove('on'));
+    btn.classList.add('on');
+    document.getElementById('fab-link').href = FORM_URL;
+    // Reset zona
+    zonaActiva = '';
+    localStorage.removeItem('minhaZona');
+    document.getElementById('zona-select').value = '';
+    // Reset filtros
+    filtroStatus = 'todos'; filtroComb = 'todos'; filtroRecentes = false;
+    ['todos','verde','amarelo','vermelho'].forEach(id => document.getElementById('f-'+id).className='fbtn');
+    document.getElementById('f-todos').className = 'fbtn on';
+    document.getElementById('f-gasolina').className = 'fbtn';
+    document.getElementById('f-gasoleo').className  = 'fbtn';
+    document.getElementById('f-recentes').className = 'fbtn';
+    carregarDados();
+  }
 
   function toggleLang() {
     lingua = lingua === 'pt' ? 'en' : 'pt';
@@ -744,6 +834,10 @@
       })
       .slice(0, 3);
 
+    if (!dados.length) {
+      document.getElementById('top-picks-list').innerHTML = `<div class="top-picks-vazio">${t('topVazio')}</div>`;
+      return;
+    }
     const container = document.getElementById('top-picks-list');
     const vazio = document.getElementById('tp-vazio');
 
@@ -1001,8 +1095,8 @@
       document.getElementById('count-vermelho').textContent= nR;
 
       const disp = nV+nA;
-      document.getElementById('page-title').textContent = `(${disp} ${t('disponiveis')}) Há Combustível`;
-      document.title = `(${disp} ${t('disponiveis')}) Há Combustível — Maputo`;
+      document.getElementById('page-title').textContent = `(${disp} ${t('disponiveis')}) ${t('titulo')[cidadeActiva] || 'Há Combustível'}`;
+      document.title = `(${disp} ${t('disponiveis')}) ${t('titulo')[cidadeActiva] || 'Há Combustível'}`;
       const agora = new Date().toLocaleTimeString('pt-MZ',{hour:'2-digit',minute:'2-digit'});
       document.getElementById('header-sub').textContent = `${todosOsDados.length} ${t('reportsHoje')} · ${agora}`;
 
@@ -1034,6 +1128,14 @@
   }
 
   document.getElementById('lang-btn').textContent = lingua==='pt'?'EN':'PT';
+  // Inicializar cidade guardada
+  if (cidadeActiva === 'beira') {
+    document.getElementById('btn-maputo').classList.remove('on');
+    document.getElementById('btn-beira').classList.add('on');
+    SHEET_URL = SHEETS['beira'];
+    FORM_URL  = FORMS['beira'];
+    document.getElementById('fab-link').href = FORM_URL;
+  }
   carregarDados().then(iniciarCountdown);
   setInterval(()=>{carregarDados();iniciarCountdown();},REFRESH_MS);
 </script>
